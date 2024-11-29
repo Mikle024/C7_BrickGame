@@ -2,18 +2,19 @@
 
 // frogger
 void print_overlay(void) {
-  print_rectangle(0, BOARD_N + 1, 0, BOARD_M + 1);
-  print_rectangle(0, BOARD_N + 1, BOARD_M + 2, BOARD_M + HUD_WIDTH + 3);
+  print_rectangle(0, FIELD_HEIGHT + 1, 0, BOARD_M + 1);
+  print_rectangle(0, FIELD_HEIGHT + 1, BOARD_M + 2, BOARD_M + HUD_WIDTH + 3);
 
   print_rectangle(1, 3, BOARD_M + 3, BOARD_M + HUD_WIDTH + 2);
   print_rectangle(4, 6, BOARD_M + 3, BOARD_M + HUD_WIDTH + 2);
   print_rectangle(7, 9, BOARD_M + 3, BOARD_M + HUD_WIDTH + 2);
   print_rectangle(10, 12, BOARD_M + 3, BOARD_M + HUD_WIDTH + 2);
+  print_rectangle(13, 20, BOARD_M + 3, BOARD_M + HUD_WIDTH + 2);
 
-  MVPRINTW(2, BOARD_M + 5, "LEVEL");
-  MVPRINTW(5, BOARD_M + 5, "SCORE");
-  MVPRINTW(8, BOARD_M + 5, "SPEED");
-  MVPRINTW(11, BOARD_M + 5, "LIVES");
+  //  MVPRINTW(2, BOARD_M + 5, "LEVEL");
+  //  MVPRINTW(5, BOARD_M + 8, "SCORE");
+  //  MVPRINTW(8, BOARD_M + 5, "SPEED");
+  //  MVPRINTW(11, BOARD_M + 5, "LIVES");
 
   MVPRINTW(BOARD_N / 2, (BOARD_M - INTRO_MESSAGE_LEN) / 2 + 1, INTRO_MESSAGE);
 }
@@ -57,10 +58,22 @@ void frontPrint(GameInfo_t *gameInfo) {
   }
 
   // Обновляем информацию в HUD
-  MVPRINTW(2, BOARD_M + 5, "LEVEL: %d", gameInfo->level);
-  MVPRINTW(5, BOARD_M + 5, "SCORE: %d", gameInfo->score);
-  MVPRINTW(8, BOARD_M + 5, "SPEED: %d", gameInfo->speed);
-  MVPRINTW(11, BOARD_M + 5, "LIVES: %d", 1);
+  MVPRINTW(2, BOARD_M + 7, "LEVEL: %d", gameInfo->level);
+  MVPRINTW(5, BOARD_M + 7, "SCORE: %d", gameInfo->score);
+  MVPRINTW(8, BOARD_M + 7, "SPEED: %d", gameInfo->speed);
+  MVPRINTW(11, BOARD_M + 7, "LIVES: %d", 1);
+  MVPRINTW(14, BOARD_M + 5, "NEXT FIGURE:");
+
+  //    for (int y = 0; y < FIELD_HEIGHT; y++) {
+  //        for (int x = 0; x < FIELD_WIDTH; x++) {
+  //            if (gameInfo->next[y][x] == 0) {
+  //                MVPRINTW(14 + y, BOARD_M + 5 + x, " ");  // Пустая клетка
+  //            } else {
+  //                MVPRINTW(14 + y, BOARD_M + 5 + x, "#");  // Заполненная
+  //                клетка
+  //            }
+  //        }
+  //    }
 
   // Обновляем экран
   refresh();

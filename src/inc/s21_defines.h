@@ -32,8 +32,8 @@
 #define ROWS_MAP FIELD_HEIGHT
 #define MAP_PADDING 3
 #define BOARD_N (ROWS_MAP + MAP_PADDING * 2)
-#define BOARD_M FIELD_HEIGHT
-#define HUD_WIDTH 12
+#define BOARD_M FIELD_WIDTH
+#define HUD_WIDTH 15
 #define INTRO_MESSAGE "Press ENTER to start!"
 
 #define MVPRINTW(y, x, ...) \
