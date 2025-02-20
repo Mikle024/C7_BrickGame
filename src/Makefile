@@ -1,5 +1,6 @@
 LIBRARY		= s21_tetris.a
-FUNC_FILES	= brick_game/s21_*.c
+BACK_FUNC_FILES	= brick_game/s21_*.c
+FRONT_FUNC_FILES = gui/s21_*.c
 INC 		= inc/*.h
 OBJ			= s21_*.o
 FUNC_TEST	= tests/*/test_s21_*.c
@@ -33,10 +34,13 @@ else
     OPEN_REPORT:= wslview
 endif
 
-all: s21_tetris.a
+all: up
+
+up:
+	gcc brick_game/s21_backend.c brick_game/s21_brick_game.c  gui/s21_frontend.c brick_game/s21_fsm.c -lncurses -o tetris.out
 
 build:
-	$(CC) brick_game/main.c $(FUNC_FILES) -lncurses
+	$(CC) brick_game/main.c $(BACK_FUNC_FILES) $(FRONT_FUNC_FILES) -lncurses
 
 s21_tetris.a: build.o
 	$(LIB_FLAGS) $(LIBRARY) $(OBJ)
@@ -64,13 +68,13 @@ s21_tetris.a_for_test: build_object_for_test.o
 	rm -fr $(OBJ)
 
 build.o:
-	$(CC) $(CFLAGS) $(FUNC_FILES)
+	$(CC) $(CFLAGS) $(BACK_FUNC_FILES) $(FRONT_FUNC_FILES)
 
 build_object_for_test.o:
-	$(CC) $(CFLAGS) $(COVER_FLAG) $(FUNC_FILES)
+	$(CC) $(CFLAGS) $(COVER_FLAG) $(BACK_FUNC_FILES) $(FRONT_FUNC_FILES)
 
 build_test.o:
-	$(CC) $(CFLAGS) $(FUNC_TEST)
+	$(CC) $(CFLAGS) $(BACK_FUNC_FILES)
 
 gcov_report:
 	lcov -t "test" -o tetris.info -c -d . --rc $(OS_SPECIFIC_GCOV_REPORT)
@@ -78,7 +82,7 @@ gcov_report:
 
 clang_format:
 	cp ../materials/linters/.clang-format .clang-format
-	clang-format -i $(FUNC_FILES) $(INC) $(FUNC_TEST) $(MAIN_TEST) $(TEST_HEADER)
+	clang-format -i $(BACK_FUNC_FILES) $(FRONT_FUNC_FILES) $(INC) $(FUNC_TEST) $(MAIN_TEST) $(TEST_HEADER)
 	rm .clang-format
 
 rebuild: clean all

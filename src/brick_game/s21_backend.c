@@ -1,179 +1,218 @@
 #include "../inc/s21_backend.h"
 
+#include <unistd.h>
+
 void initRandom(void) { srand(time(NULL)); }
 
-// Инициализация игры
 void initializeGame(GameContext_t *context, bool *checkInit) {
   context->currentState = GameState_Start;
 
-  context->gameStateInfo.field = createField(FIELD_WIDTH, FIELD_HEIGHT);
-  context->gameStateInfo.next = createFigure(context->gameStateInfo);
+  context->gameStateInfo.field = createMatrix(FIELD_HEIGHT, FIELD_WIDTH);
+  context->gameStateInfo.next = createFigure(rand() % FIGURE_COUNT);
   context->gameStateInfo.score = 0;
   context->gameStateInfo.high_score = 0;
   context->gameStateInfo.level = 1;
-  context->gameStateInfo.speed = 1;
+  context->gameStateInfo.speed = 1000;
   context->gameStateInfo.pause = 0;
 
-  context->currentFigure = createFigure(context->gameStateInfo);
+  context->currentFigure = createMatrix(FIGURE_SIZE, FIGURE_SIZE);
   context->figureX = FIELD_WIDTH / 2 - FIGURE_SIZE / 2;
   context->figureY = -2;
   context->oldFigureX = FIELD_WIDTH / 2 - FIGURE_SIZE / 2;
   context->oldFigureY = -2;
-  context->ticksSinceLastMove = 0;
-  context->collision = 0;
+  context->attaching = 0;
   context->gameOver = 0;
+  context->lastTime = 0;
 
   *checkInit = true;
+  initScore();
 }
 
-// Очистка игры
-void freeGame(GameContext_t *currentContext) {
-  if (currentContext) {
-    if (currentContext->currentFigure) {
-      freeFigure(currentContext->currentFigure);
-      currentContext->currentFigure = NULL;
-    }
-    if (currentContext->gameStateInfo.field) {
-      freeField(currentContext->gameStateInfo.field);
-      currentContext->gameStateInfo.field = NULL;
-    }
-    if (currentContext->gameStateInfo.next) {
-      freeFigure(currentContext->gameStateInfo.next);
-      currentContext->gameStateInfo.next = NULL;
-    }
-    memset(currentContext, 0, sizeof(GameContext_t));
+void freeGame() {
+  GameContext_t *context = getCurrentContext();
+  if (context) {
+    freeMatrix(context->currentFigure, FIGURE_SIZE);
+    freeMatrix(context->gameStateInfo.field, FIELD_HEIGHT);
+    freeMatrix(context->gameStateInfo.next, FIGURE_SIZE);
+
+    context->currentFigure = NULL;
+    context->gameStateInfo.field = NULL;
+    context->gameStateInfo.next = NULL;
+
+    context->figureX = 0;
+    context->figureY = 0;
+    context->oldFigureX = 0;
+    context->oldFigureY = 0;
+    context->attaching = 0;
+    context->gameOver = 0;
+    context->lastTime = 0;
+    context->currentState = GameState_Start;
+
+    context->gameStateInfo.score = 0;
+    context->gameStateInfo.high_score = 0;
+    context->gameStateInfo.level = 1;
+    context->gameStateInfo.speed = 1000;
+    context->gameStateInfo.pause = 0;
   }
 }
 
-// DataHelper
-int **createFigure() {
-  int **newFigure = (int **)malloc(FIGURE_SIZE * sizeof(int *));
-  for (int i = 0; i < FIGURE_SIZE; i++) {
-    newFigure[i] = (int *)malloc(FIGURE_SIZE * sizeof(int));
-    for (int j = 0; j < FIGURE_SIZE; j++) {
-      newFigure[i][j] = 0;
+int **createMatrix(int rows, int column) {
+  int **newFigure = (int **)malloc(rows * sizeof(int *));
+  if (newFigure) {
+    for (int i = 0; i < rows; i++) {
+      newFigure[i] = (int *)malloc(column * sizeof(int));
+      if (newFigure[i]) {
+        for (int j = 0; j < column; j++) {
+          newFigure[i][j] = 0;
+        }
+      }
     }
-  }
-  return newFigure;
-}
-
-void freeFigure(int **currentFigure) {
-  if (currentFigure) {
-    for (int i = 0; i < FIGURE_SIZE; i++) {
-      free(currentFigure[i]);
-    }
-    free(currentFigure);
+    return newFigure;
   }
 }
 
-int **createField() {
-  int **newField = (int **)malloc(FIELD_HEIGHT * sizeof(int *));
-  for (int i = 0; i < FIELD_HEIGHT; i++) {
-    newField[i] = (int *)malloc(FIELD_WIDTH * sizeof(int));
-    for (int j = 0; j < FIELD_WIDTH; j++) {
-      newField[i][j] = 0;
+void freeMatrix(int **matrix, int rows) {
+  if (matrix) {
+    for (int i = 0; i < rows; i++) {
+      free(matrix[i]);
     }
-  }
-  return newField;
-}
-
-void freeField(int **currentField) {
-  if (currentField) {
-    for (int i = 0; i < FIELD_HEIGHT; i++) {
-      free(currentField[i]);
-    }
-    free(currentField);
+    free(matrix);
   }
 }
 
-void dropNewFigure(GameContext_t *context) {
-  // Паттерны фигур
+void dropNewFigure() {
+  GameContext_t *context = getCurrentContext();
+
+  freeMatrix(context->currentFigure, FIGURE_SIZE);
+  context->currentFigure = context->gameStateInfo.next;
+
+  context->gameStateInfo.next = createFigure(rand() % FIGURE_COUNT);
+
+  context->figureX = FIELD_WIDTH / 2 - FIGURE_SIZE / 2;
+  context->figureY = -2;
+  context->oldFigureX = FIELD_WIDTH / 2 - FIGURE_SIZE / 2;
+  context->oldFigureY = -2;
+
+  context->attaching = 0;
+
+  if (collision()) context->gameOver = 1;
+}
+
+int **createFigure(int figureNum) {
   static const int patternFigure[FIGURE_COUNT][FIGURE_SIZE][FIGURE_SIZE] = {
       // I
-      {{0, 0, 0, 0}, {1, 1, 1, 1}, {0, 0, 0, 0}, {0, 0, 0, 0}},
+      {
+          {0, 0,0, 0},
+          {1, 1, 1, 1},
+          {0, 0, 0, 0},
+          {0, 0, 0, 0}
+          },
       // O
-      {{0, 2, 2, 0}, {0, 2, 2, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}},
+      {
+          {0, 2, 2, 0},
+          {0, 2, 2, 0},
+          {0, 0, 0, 0},
+          {0, 0, 0, 0}},
       // T
-      {{0, 0, 0, 0}, {3, 3, 3, 0}, {0, 3, 0, 0}, {0, 0, 0, 0}},
+      {
+          {0, 0, 0, 0},
+          {3, 3, 3, 0},
+          {0, 3, 0, 0},
+          {0, 0, 0, 0}
+          },
       // L
-      {{0, 4, 0, 0}, {0, 4, 0, 0}, {0, 4, 4, 0}, {0, 0, 0, 0}},
+      {
+          {0, 4, 0, 0},
+          {0, 4, 0, 0},
+          {0, 4, 4, 0},
+          {0, 0, 0, 0}
+          },
       // J
-      {{0, 0, 5, 0}, {0, 0, 5, 0}, {0, 5, 5, 0}, {0, 0, 0, 0}},
+      {
+          {0, 0, 5, 0},
+          {0, 0, 5, 0},
+          {0, 5, 5, 0},
+          {0, 0, 0, 0}
+          },
       // S
-      {{0, 0, 0, 0}, {0, 0, 6, 6}, {0, 6, 6, 0}, {0, 0, 0, 0}},
+      {
+          {0, 0, 0, 0},
+          {0, 0, 6, 6},
+          {0, 6, 6, 0},
+          {0, 0, 0, 0}
+       },
       // Z
-      {{0, 0, 0, 0}, {7, 7, 0, 0}, {0, 7, 7, 0}, {0, 0, 0, 0}}};
+      {
+          {0, 0, 0, 0},
+          {7, 7, 0, 0},
+          {0, 7, 7, 0},
+          {0, 0, 0, 0}
+      }
+  };
 
-  // Генерация случайной фигуры
-  int figureNum = rand() % FIGURE_COUNT;
+  int **newFigure = createMatrix(FIGURE_SIZE, FIGURE_SIZE);
 
-  // Создание новой фигуры
-  int **newFigure = createFigure();
-
-  // Копирование данных из паттерна в новую фигуру
   for (int i = 0; i < FIGURE_SIZE; i++) {
     for (int j = 0; j < FIGURE_SIZE; j++) {
       newFigure[i][j] = patternFigure[figureNum][i][j];
     }
   }
 
-  // Обновление координат и текущей фигуры
-  context->figureX = FIELD_WIDTH / 2 - FIGURE_SIZE / 2;
-  context->figureY = -2;
-  context->oldFigureY = -2;
-
-  // Очистка предыдущей фигуры
-  freeFigure(context->currentFigure);
-  context->currentFigure = newFigure;
-  context->collision = 0;
+  return newFigure;
 }
 
-void collision(GameContext_t *context) {
+bool collision() {
+  GameContext_t *context = getCurrentContext();
   int **currentFigure = context->currentFigure;
+
+  bool collision = false;
+  bool shouldAttach = false;
 
   for (int i = 0; i < FIGURE_SIZE; i++) {
     for (int j = 0; j < FIGURE_SIZE; j++) {
-      if (currentFigure[i][j] != 0) {  // Проверяем блок текущей фигуры.
-        int fx = context->figureX + j;  // Абсолютная X-координата.
-        int fy = context->figureY + i;  // Абсолютная Y-координата.
+      if (currentFigure[i][j] != 0) {
+        int boardX = context->figureX + j;
+        int boardY = context->figureY + i;
 
-        // Проверка пересечения с другим блоком игрового поля.
-        if (fy >= 0 && fx >= 0 && fx < FIELD_WIDTH && fy < FIELD_HEIGHT) {
-          int fieldValue = context->gameStateInfo.field[fy][fx];
+        if (boardY >= FIELD_HEIGHT) {
+          shouldAttach = true;
+          collision = true;
+        }
 
-          // Игнорируем коллизию с блоками текущей фигуры.
+        if (boardX < 0 || boardX >= FIELD_WIDTH) collision = true;
+
+        if (pixelInField(boardX, boardY) &&
+            context->gameStateInfo.field[boardY][boardX] != 0) {
+          int fieldValue = context->gameStateInfo.field[boardY][boardX];
+
           if (fieldValue != 0 && fieldValue != currentFigure[i][j]) {
-            context->collision = 1;
+            collision = true;
 
-            // Если коллизия произошла выше верхней границы, конец игры.
-            if (context->figureY + i == 0) {
-              context->gameOver = 1;
+            int belowY = boardY + 1;
+            if (belowY >= FIELD_HEIGHT ||
+                (pixelInField(boardX, belowY) &&
+                 context->gameStateInfo.field[belowY][boardX] != 0)) {
+              shouldAttach = true;
             }
           }
-        }
-        // Проверка выхода за нижнюю границу игрового поля.
-        else if (fy >= FIELD_HEIGHT) {
-          context->collision = 1;
         }
       }
     }
   }
-}
 
-void calculate(GameContext_t *context) {
-  // Увеличиваем количество тактов
-  context->ticksSinceLastMove++;
-  //   Если прошло достаточно тактов, двигаем фигуру вниз
-  if (context->ticksSinceLastMove >= TICKS_PER_MOVE) {
-    context->ticksSinceLastMove = 0;  // Сбрасываем счётчик тактов
-    // Проверяем, нет ли столкновения перед движением вниз
-    context->figureY++;
-    collision(context);
-    if (context->collision) context->figureY--;
+  if (shouldAttach) {
+    context->attaching = 1;
   }
+
+  return collision;
 }
 
-void addCurrentFigureToField(GameContext_t *context) {
+bool pixelInField(int x, int y) {
+  return (x >= 0 && x < FIELD_WIDTH && y >= 0 && y < FIELD_HEIGHT);
+}
+
+void addCurrentFigureToField() {
+  GameContext_t *context = getCurrentContext();
   for (int i = 0; i < FIGURE_SIZE; i++) {
     for (int j = 0; j < FIGURE_SIZE; j++) {
       if (context->currentFigure[i][j] != 0 && context->figureY + i >= 0 &&
@@ -187,13 +226,29 @@ void addCurrentFigureToField(GameContext_t *context) {
   }
 }
 
-void attachFigureToField(GameContext_t *context) {
-  // Убедиться, что текущая фигура есть на поле
+void clearCurrentFigureFromField() {
+  GameContext_t *context = getCurrentContext();
+  for (int i = 0; i < FIGURE_SIZE; i++) {
+    for (int j = 0; j < FIGURE_SIZE; j++) {
+      int fieldX = context->oldFigureX + j;
+      int fieldY = context->oldFigureY + i;
+
+      if (context->currentFigure[i][j] != 0 && fieldY >= 0 &&
+          fieldY < FIELD_HEIGHT && fieldX >= 0 && fieldX < FIELD_WIDTH) {
+        context->gameStateInfo.field[fieldY][fieldX] = 0;
+      }
+    }
+  }
+
+  context->oldFigureX = context->figureX;
+  context->oldFigureY = context->figureY;
+}
+
+void attachFigureToField() {
+  GameContext_t *context = getCurrentContext();
   if (context->currentFigure != NULL) {
-    // Сначала добавляем текущую фигуру на поле
     addCurrentFigureToField(context);
 
-    // Обновляем значения блоков фигуры (прибавляем 7)
     int **field = context->gameStateInfo.field;
 
     for (int i = 0; i < FIGURE_SIZE; i++) {
@@ -202,9 +257,8 @@ void attachFigureToField(GameContext_t *context) {
           int fx = context->figureX + j;
           int fy = context->figureY + i;
 
-          // Проверка границ поля
           if (fx >= 0 && fx < FIELD_WIDTH && fy >= 0 && fy < FIELD_HEIGHT) {
-            field[fy][fx] += 7;  // Увеличиваем значение для приклеивания
+            field[fy][fx] += 7;
           }
         }
       }
@@ -212,327 +266,293 @@ void attachFigureToField(GameContext_t *context) {
   }
 }
 
-void clearCurrentFigureFromField(GameContext_t *context) {
-  for (int i = 0; i < FIGURE_SIZE; i++) {
-    for (int j = 0; j < FIGURE_SIZE; j++) {
-      // Проверяем, находится ли часть фигуры внутри границ игрового поля
-      int fieldX = context->oldFigureX + j;
-      int fieldY = context->oldFigureY + i;
-
-      if (context->currentFigure[i][j] != 0 && fieldY >= 0 &&
-          fieldY < FIELD_HEIGHT && fieldX >= 0 && fieldX < FIELD_WIDTH) {
-        // Очищаем ячейку, если она соответствует части фигуры
-        context->gameStateInfo.field[fieldY][fieldX] = 0;
-      }
-    }
+void processShift() {
+  GameContext_t *context = getCurrentContext();
+  if (context->userInput == Left) {
+    moveFigureLeft(context);
+  } else if (context->userInput == Right) {
+    moveFigureRight(context);
+  } else if (context->userInput == Down) {
+    moveFigureDown(context);
+  } else if (context->userInput == Action) {
+    if (!ifSquare()) rotationFigure(context);
   }
-
-  // Обновляем старые координаты
-  context->oldFigureX = context->figureX;
-  context->oldFigureY = context->figureY;
+  context->shiftRequested = false;
 }
 
-void transitionTo(GameContext_t *context, GameState newState) {
-  // Определение переходов: 1 - переход возможен, 0 - недопустим
-  const int transitionMatrix[STATE_COUNT][STATE_COUNT] = {
-      {0, 1, 0, 0, 0, 0},  // GameState_Start (0)
-      {0, 0, 1, 0, 0, 0},  // GameState_Spawn (1)
-      {0, 0, 1, 1, 1, 0},  // GameState_Moving (2)
-      {0, 0, 1, 0, 1, 0},  // GameState_Shifting (3)
-      {0, 1, 0, 0, 0, 1},  // GameState_Attaching (4)
-      {1, 0, 0, 0, 0, 0}   // GameState_GameOver (5)
-  };
-  if (transitionMatrix[context->currentState][newState]) {
-    //    context->currentState = newState;
-    switch (newState) {
-      case GameState_Start:
-        // Инициализация
-        transitionToStart(context);
-        break;
-      case GameState_Spawn:
-        transitionToSpawn(context);
-        break;
-      case GameState_Moving:
-        transitionToMoving(context);
-        break;
-      case GameState_Shifting:
-        transitionToShifting(context);
-        break;
-      case GameState_Attaching:
-        transitionToAttaching(context);
-        break;
-      case GameState_GameOver:
-        transitionToGameOver(context);
-        break;
-    }
-  }
-}
-
-// Функция для перехода в состояние начала игры
-void transitionToStart(GameContext_t *context) {
-  context->currentState = GameState_Start;
-}
-
-// Функция для перехода в состояние появления новой фигуры
-void transitionToSpawn(GameContext_t *context) {
-  dropNewFigure(context);
-  addCurrentFigureToField(context);
-  context->currentState = GameState_Spawn;
-}
-
-// Функция для перехода в состояние перемещения
-void transitionToMoving(GameContext_t *context) {
-  calculate(context);
-  clearCurrentFigureFromField(context);
-  addCurrentFigureToField(context);
-  context->currentState = GameState_Moving;
-}
-
-// Функция для перехода в состояние изменения положения
-void transitionToShifting(GameContext_t *context) {
-  context->currentState = GameState_Shifting;
-}
-
-// Функция для перехода в состояние прикрепления фигуры
-void transitionToAttaching(GameContext_t *context) {
-  attachFigureToField(context);
-  //  int clearedLines = eraseLines(context);
-  //  if (clearedLines > 0) {
-  //    context->gameStateInfo.score++;
-  //  }
-  context->gameStateInfo.level++;
-  context->currentState = GameState_Attaching;
-}
-
-// Функция для перехода в состояние завершения игры
-void transitionToGameOver(GameContext_t *context) {
-  context->currentState = GameState_GameOver;
-}
-
-GameInfo_t updateCurrentState() {
+GameContext_t *getCurrentContext() {
   static GameContext_t gameContext;
-  GameInfo_t currentGameInfo;
   static bool initGame = false;
   if (!initGame) {
     initializeGame(&gameContext, &initGame);
-    currentGameInfo = gameContext.gameStateInfo;
+  }
+  GameContext_t *get = &gameContext;
+  return get;
+}
+
+GameInfo_t updateCurrentState() {
+  static bool firstCall = true;
+  GameContext_t *gameContext = getCurrentContext();
+
+  GameInfo_t currentGameInfo;
+  if (firstCall) {
+    firstCall = false;
   } else {
-    switch (gameContext.currentState) {
+    switch (gameContext->currentState) {
       case GameState_Start:
-        transitionTo(&gameContext, GameState_Spawn);
-        currentGameInfo = gameContext.gameStateInfo;
+        transitionTo(gameContext, GameState_Spawn);
         break;
+
       case GameState_Spawn:
-        transitionTo(&gameContext, GameState_Moving);
-        currentGameInfo = gameContext.gameStateInfo;
+        gameContext->currentState = GameState_Moving;
         break;
+
       case GameState_Moving:
-        if (gameContext.collision) {
-          transitionTo(&gameContext, GameState_Attaching);
-          currentGameInfo = gameContext.gameStateInfo;
-        } else {
-          transitionTo(&gameContext, GameState_Moving);
-          currentGameInfo = gameContext.gameStateInfo;
+        if (gameContext->attaching) {
+          transitionTo(gameContext, GameState_Attaching);
+        } else if (gameContext->shiftRequested ) {
+          transitionTo(gameContext, GameState_Shifting);
+        } else if (gameContext->shiftRequested &&
+                   gameContext->userInput == Pause) {
+          if (gameContext->gameStateInfo.pause == 0)
+            gameContext->gameStateInfo.pause = 1;
+          else if (gameContext->gameStateInfo.pause == 1)
+            gameContext->gameStateInfo.pause = 0;
+        } else if (gameContext->shiftRequested ||
+                   gameContext->userInput == Terminate) {
+          freeGame();
+        } else if (timer()) {
+          transitionTo(gameContext, GameState_Moving);
         }
         break;
+
+      case GameState_Shifting:
+        gameContext->currentState = GameState_Moving;
+        break;
+
       case GameState_Attaching:
-        if (!gameContext.gameOver) {
-          transitionTo(&gameContext, GameState_Spawn);
-          currentGameInfo = gameContext.gameStateInfo;
+        if (!gameContext->gameOver) {
+          transitionTo(gameContext, GameState_Spawn);
         } else {
-          transitionTo(&gameContext, GameState_GameOver);
-          currentGameInfo = gameContext.gameStateInfo;
+          transitionTo(gameContext, GameState_GameOver);
         }
         break;
+
       case GameState_GameOver:
-        freeGame(&gameContext);
+        freeGame();
+        break;
+
+      default:
         break;
     }
   }
+
+  currentGameInfo = gameContext->gameStateInfo;
   return currentGameInfo;
 }
 
-// void userInput(UserAction_t action, bool hold) {
-//     // Получаем контекст игры из глобальной обёртки
-//     GameContext_t current = updateCurrentState();
-//
-//     // Проверяем, если контекст не инициализирован или поле игры пусто
-//     if (context == NULL || context->gameStateInfo.field == NULL) {
-//         return;
-//     }
-//
-//     // Обрабатываем действие пользователя
-//     switch (action) {
-//         case Left:
-//             moveFigureLeft(context);
-//             collision(context);
-//             if (context->collision) {
-//                 moveFigureRight(context);
-//                 context->collision--;
-//             }
-//             break;
-//         case Right:
-//             moveFigureRight(context);
-//             collision(context);
-//             if (context->collision) {
-//                 moveFigureLeft(context);
-//                 context->collision--;
-//             }
-//             break;
-//         case Down:
-//             moveFigureDown(context);
-//             collision(context);
-//             if (context->collision) {
-//                 moveFigureUp(context);
-//                 context->collision--;
-//             }
-//             break;
-//         case Action: {
-//             // Поворачиваем фигуру
-//             int **rotatedFigure = rotationFigure(context);
-//             int **tmp = context->currentFigure;
-//             context->currentFigure = rotatedFigure;
-//             collision(context);
-//             if (context->collision) {
-//                 context->currentFigure = tmp;
-//                 freeFigure(rotatedFigure);
-//                 context->collision--;
-//             } else {
-//                 freeFigure(tmp);
-//             }
-//             break;
-//         }
-//         case Pause:
-//             context->gameStateInfo.pause = !context->gameStateInfo.pause;
-//             break;
-//         case Terminate:
-//             context->gameOver = true;
-//             break;
-//         case Up:
-//         default:
-//             // Ничего не делаем
-//             break;
-//     }
-// }
+void userInput(UserAction_t action, bool hold) {
+  GameContext_t *context = getCurrentContext();
 
-// int **rotationFigure(GameContext_t *context) {
-//     // Создаем новый массив для повернутой фигуры
-//     int **shiftFigure = createFigure();
-//     int **currentFigure = context->currentFigure;
-//
-//     // Выполняем вращение на 90 градусов по часовой стрелке
-//     for (int i = 0; i < FIGURE_SIZE; i++) {
-//         for (int j = 0; j < FIGURE_SIZE; j++) {
-//             // Новый элемент [i][j] в повернутой фигуре берётся из
-//             [FIGURE_SIZE - j - 1][i] в исходной shiftFigure[i][j] =
-//             currentFigure[FIGURE_SIZE - j - 1][i];
-//         }
-//     }
-//
-//     return shiftFigure;
-// }
+  switch (action) {
+    case Left:
+      if (!hold) {
+        context->shiftRequested = true;
+        context->userInput = Left;
+      }
+      break;
+    case Right:
+      if (!hold) {
+        context->shiftRequested = true;
+        context->userInput = Right;
+      }
+      break;
+    case Down:
+      if (!hold) {
+        context->shiftRequested = true;
+        context->userInput = Down;
+      }
+      break;
+    case Action:
+      if (!hold) {
+        context->shiftRequested = true;
+        context->userInput = Action;
+      }
+      break;
+    case Pause:
+      if (!hold) {
+        context->shiftRequested = true;
+        context->userInput = Pause;
+      }
+      break;
+    case Terminate:
+      if (!hold) {
+        context->shiftRequested = true;
+        context->userInput = Terminate;
+      }
+      break;
+    default:
+      break;
+  }
+}
 
-// void moveFigureDown(GameContext_t *context) {
-//   context->figureY++;
-//   collision(context);
-//   if (context->collision) {
-//     context->figureY--;  // Возвращаем, если столкновение
-//   }
-// }
-//
-// void moveFigureUp(GameContext_t *context) {
-//   context->figureY--;
-//   collision(context);
-//   if (context->collision) {
-//     context->figureY++;  // Возвращаем, если столкновение
-//   }
-// }
-//
-// void moveFigureRight(GameContext_t *context) {
-//   context->figureX++;
-//   collision(context);
-//   if (context->collision) {
-//     context->figureX--;  // Возвращаем, если столкновение
-//   }
-// }
-//
-// void moveFigureLeft(GameContext_t *context) {
-//   context->figureX--;
-//   collision(context);
-//   if (context->collision) {
-//     context->figureX++;  // Возвращаем, если столкновение
-//   }
-// }
+long long getCurrentTime() {
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  return (long long)tv.tv_sec * 1000LL + tv.tv_usec / 1000;
+}
 
-// Функция для инициализации контекста игры
-// void initializeGameContextWrapper(void) {
-//    if (globalContextWrapper == NULL) {
-//        globalContextWrapper = createGameContextWrapper();
-//    }
-//}
-//
-// GameContextWrapper* createGameContextWrapper(void) {
-//    GameContextWrapper* wrapper =
-//    (GameContextWrapper*)malloc(sizeof(GameContextWrapper));
-//    wrapper->gameContext = (GameContext_t*)malloc(sizeof(GameContext_t));
-//    // Инициализация контекста игры
-//    return wrapper;
-//}
-//
-// GameContext_t* getGameContext(GameContextWrapper *wrapper) {
-//    return wrapper->gameContext;
-//}
-//
-// void freeGameContextWrapper(GameContextWrapper *wrapper) {
-//    free(wrapper->gameContext);
-//    free(wrapper);
-//}
+bool timer() {
+  GameContext_t *gameContext = getCurrentContext();
+  bool result = false;
+  long long current_time = getCurrentTime();
 
-// void plantFigure(GameContext_t *context) {
-//  int **currentFigure = context->currentFigure;
-//
-//  for (int i = 0; i < FIGURE_SIZE; i++) {
-//    for (int j = 0; j < FIGURE_SIZE; j++) {
-//      if (currentFigure[i][j] != 0) {
-//        int fx = context->figureX + j;
-//        int fy = context->figureY + i;
-//        context->gameStateInfo.field[fy][fx] = currentFigure[i][j];
-//      }
-//    }
-//  }
-//  freeFigure(currentFigure);
-//  context->currentFigure = NULL;
-//}
-//
-// int lineFilled(int i, int **currentField) {
-//  int emptyBlock = 1;
-//  for (int j = 0; j < FIELD_WIDTH; j++) {
-//    if (currentField[i][j] == 0) emptyBlock = 0;
-//  }
-//  return emptyBlock;
-//}
-//
-// void dropLine(int i, int **currentField) {
-//  for (int k = i; k > 0; k--) {
-//    for (int j = 0; j < FIELD_WIDTH; j++) {
-//      currentField[k][j] = currentField[k - 1][j];
-//    }
-//  }
-//  for (int j = 0; j < FIELD_WIDTH; j++) {
-//    currentField[0][j] = 0;
-//  }
-//}
-//
-// int eraseLines(GameContext_t *context) {
-//  int countLines = 0;
-//  int **currentField = context->gameStateInfo.field;
-//
-//  for (int i = FIELD_HEIGHT - 1; i >= 0; i--) {
-//    if (lineFilled(i, currentField)) {
-//      dropLine(i, currentField);
-//      countLines++;
-//      i++;
-//    }
-//  }
-//  return countLines;
-//}
+  if (current_time - gameContext->lastTime >=
+      gameContext->gameStateInfo.speed) {
+    gameContext->lastTime = current_time;
+    result = true;
+  }
+
+  return result;
+}
+void rotationFigure() {
+  GameContext_t *context = getCurrentContext();
+  int **shiftFigure = createMatrix(FIGURE_SIZE, FIGURE_SIZE);
+  int **currentFigure = context->currentFigure;
+
+  clearCurrentFigureFromField(context);
+  for (int i = 0; i < FIGURE_SIZE; i++) {
+    for (int j = 0; j < FIGURE_SIZE; j++) {
+      shiftFigure[j][FIGURE_SIZE - i - 1] = currentFigure[i][j];
+    }
+  }
+
+  context->currentFigure = shiftFigure;
+
+  if (collision()) {
+    context->currentFigure = currentFigure;
+    freeMatrix(shiftFigure, FIGURE_SIZE);
+  } else {
+    context->currentFigure = shiftFigure;
+    freeMatrix(currentFigure, FIGURE_SIZE);
+  }
+}
+
+bool ifSquare() {
+  bool ifSquare = false;
+  GameContext_t *context = getCurrentContext();
+
+  for (int i = 0; i < FIGURE_SIZE; i++) {
+    for (int j = 0; j < FIGURE_SIZE; j++) {
+      if (context->currentFigure[i][j] == 2) ifSquare = true;
+    }
+  }
+
+  return ifSquare;
+}
+
+void moveFigureRight() {
+  GameContext_t *context = getCurrentContext();
+  context->figureX++;
+  if (collision()) context->figureX--;
+}
+
+void moveFigureLeft() {
+  GameContext_t *context = getCurrentContext();
+  context->figureX--;
+  if (collision()) context->figureX++;
+}
+
+void moveFigureDown() {
+  GameContext_t *context = getCurrentContext();
+  context->figureY++;
+  if (collision()) context->figureY--;
+}
+
+int clearLines() {
+  int cleared = 0;
+  for (int i = 0; i < FIELD_HEIGHT; i++) {
+    if (fullLine(i)) {
+      removeLine(i);
+      cleared += 1;
+    }
+  }
+  return cleared;
+}
+
+bool fullLine(int numLine) {
+  GameContext_t *context = getCurrentContext();
+  for (int i = 0; i < FIELD_WIDTH; i++) {
+    if (context->gameStateInfo.field[numLine][i] == 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
+void removeLine(int numLine) {
+  GameContext_t *context = getCurrentContext();
+  for (int i = numLine; i > 0; i--) {
+    for (int j = 0; j < FIELD_WIDTH; j++) {
+      context->gameStateInfo.field[i][j] =
+          context->gameStateInfo.field[i - 1][j];
+    }
+  }
+  for (int i = 0; i < FIELD_WIDTH; i++) {
+    context->gameStateInfo.field[0][i] = 0;
+  }
+}
+
+void initScore() {
+  GameInfo_t gameInfo = updateCurrentState();
+  FILE *fp = fopen("score.txt", "r");
+  if (fp) {
+    int score = 0;
+    if (fscanf(fp, "%d", &score) == 1 && score > 0) {
+      gameInfo.high_score = score;
+    } else {
+      gameInfo.high_score = 0;
+    }
+  } else {
+    gameInfo.high_score = 0;
+  }
+  fclose(fp);
+}
+
+void countScore(int lines) {
+  GameContext_t *context = getCurrentContext();
+  int const scores[] = {0, 100, 300, 700, 1500};
+
+  context->gameStateInfo.score += scores[lines];
+  context->gameStateInfo.level = 1 + (context->gameStateInfo.score / 600);
+
+  countSpeed();
+
+  if (context->gameStateInfo.score >= context->gameStateInfo.high_score) {
+    context->gameStateInfo.high_score = context->gameStateInfo.score;
+    updateScore();
+  }
+}
+
+void countSpeed() {
+  GameContext_t *context = getCurrentContext();
+  int delay = 500;
+  int min_delay = 50;
+  int max_lvl = 10;
+
+  if (context->gameStateInfo.level <= max_lvl)
+    context->gameStateInfo.speed =
+        delay - (context->gameStateInfo.level - 1) *
+                    ((delay - min_delay) / (max_lvl - 1));
+  else
+    context->gameStateInfo.speed = min_delay;
+}
+
+void updateScore() {
+  GameContext_t *context = getCurrentContext();
+  FILE *fp = fopen("score.txt", "w");
+  if (fp) {
+    fprintf(fp, "%d", context->gameStateInfo.score);
+    fclose(fp);
+  }
+}

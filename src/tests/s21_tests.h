@@ -3,7 +3,7 @@
 
 #include <check.h>
 
-#include "../brick_game/s21_backend.h"
+#include "../inc/s21_backend.h"
 
 Suite *suiteInitializeGame(void);
 Suite *suiteCreateFigure(void);

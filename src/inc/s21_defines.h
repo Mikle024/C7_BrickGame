@@ -3,30 +3,24 @@
 
 #include <ncurses.h>
 
-#define FIELD_WIDTH 10   // Ширина поля
-#define FIELD_HEIGHT 20  // Высота поля
+#define FIELD_WIDTH 10
+#define FIELD_HEIGHT 20
 
-#define FIGURE_SIZE 4   // Размер фигур
-#define FIGURE_COUNT 7  // Количество фигур
+#define FIGURE_SIZE 4
+#define FIGURE_COUNT 7
 
-#define STATE_COUNT 6     // Количество состояний
-#define TICKS_PER_MOVE 1  // Определяет частоту перемещения фигуры вниз
+#define STATE_COUNT 6
 
-// frogger
-// Функция для инициализации ncurses
-#define WIN_INIT(time)    \
-  {                       \
-    initscr();            \
-    noecho();             \
-    curs_set(0);          \
-    keypad(stdscr, TRUE); \
-    timeout(time);        \
+#define WIN_INIT(time)     \
+  {                        \
+    initscr();             \
+    noecho();              \
+    curs_set(0);           \
+    keypad(stdscr, TRUE);  \
+    nodelay(stdscr, TRUE); \
+    timeout(time);         \
   }
 
-// nodelay(stdscr, TRUE);  \
-// keypad(stdscr, TRUE);   \
-
-// Макросы и константы
 #define BOARDS_BEGIN 2
 #define INTRO_MESSAGE_LEN 20
 #define ROWS_MAP FIELD_HEIGHT
@@ -39,7 +33,5 @@
 #define MVPRINTW(y, x, ...) \
   mvprintw(BOARDS_BEGIN + (y), BOARDS_BEGIN + (x), __VA_ARGS__)
 #define MVADDCH(y, x, c) mvaddch(BOARDS_BEGIN + (y), BOARDS_BEGIN + (x), c)
-
-// end frogger
 
 #endif
