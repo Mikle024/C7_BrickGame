@@ -3,13 +3,13 @@
 
 #include "s21_backend.h"
 
-void transitionTo(GameContext_t *context, GameState newState);
-void transitionToStart(GameContext_t *context);
-void transitionToSpawn(GameContext_t *context);
-void transitionToMoving(GameContext_t *context);
-void transitionToShifting(GameContext_t *context);
-void transitionToAttaching(GameContext_t *context);
-void transitionToGameOver(GameContext_t *context);
+void transitionTo(GameState newState);
+void stateOfStart();
+void stateOfSpawn();
+void stateOfMoving();
+void stateOfShifting();
+void stateOfAttaching();
+void stateOfGameOver();
 
 // из GameState_Start только в GameState_Spawn
 // из GameState_Spawn только в GameState_Moving

@@ -39,7 +39,6 @@ typedef struct {
   int **currentFigure;
   int figureX, figureY;
   int oldFigureX, oldFigureY;
-  int attaching;
   int gameOver;
   bool shiftRequested;
   long long lastTime;

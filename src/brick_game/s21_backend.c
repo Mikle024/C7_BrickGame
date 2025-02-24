@@ -12,15 +12,14 @@ void initializeGame(GameContext_t *context, bool *checkInit) {
   context->gameStateInfo.score = 0;
   context->gameStateInfo.high_score = 0;
   context->gameStateInfo.level = 1;
-  context->gameStateInfo.speed = 1000;
-  context->gameStateInfo.pause = 0;
+  context->gameStateInfo.speed = 500;
+  context->gameStateInfo.pause = 1;
 
   context->currentFigure = createMatrix(FIGURE_SIZE, FIGURE_SIZE);
   context->figureX = FIELD_WIDTH / 2 - FIGURE_SIZE / 2;
   context->figureY = -2;
   context->oldFigureX = FIELD_WIDTH / 2 - FIGURE_SIZE / 2;
   context->oldFigureY = -2;
-  context->attaching = 0;
   context->gameOver = 0;
   context->lastTime = 0;
 
@@ -43,7 +42,6 @@ void freeGame() {
     context->figureY = 0;
     context->oldFigureX = 0;
     context->oldFigureY = 0;
-    context->attaching = 0;
     context->gameOver = 0;
     context->lastTime = 0;
     context->currentState = GameState_Start;
@@ -93,62 +91,25 @@ void dropNewFigure() {
   context->oldFigureX = FIELD_WIDTH / 2 - FIGURE_SIZE / 2;
   context->oldFigureY = -2;
 
-  context->attaching = 0;
-
   if (collision()) context->gameOver = 1;
 }
 
 int **createFigure(int figureNum) {
   static const int patternFigure[FIGURE_COUNT][FIGURE_SIZE][FIGURE_SIZE] = {
       // I
-      {
-          {0, 0,0, 0},
-          {1, 1, 1, 1},
-          {0, 0, 0, 0},
-          {0, 0, 0, 0}
-          },
+      {{0, 0, 0, 0}, {1, 1, 1, 1}, {0, 0, 0, 0}, {0, 0, 0, 0}},
       // O
-      {
-          {0, 2, 2, 0},
-          {0, 2, 2, 0},
-          {0, 0, 0, 0},
-          {0, 0, 0, 0}},
+      {{0, 2, 2, 0}, {0, 2, 2, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}},
       // T
-      {
-          {0, 0, 0, 0},
-          {3, 3, 3, 0},
-          {0, 3, 0, 0},
-          {0, 0, 0, 0}
-          },
+      {{0, 0, 0, 0}, {3, 3, 3, 0}, {0, 3, 0, 0}, {0, 0, 0, 0}},
       // L
-      {
-          {0, 4, 0, 0},
-          {0, 4, 0, 0},
-          {0, 4, 4, 0},
-          {0, 0, 0, 0}
-          },
+      {{0, 4, 0, 0}, {0, 4, 0, 0}, {0, 4, 4, 0}, {0, 0, 0, 0}},
       // J
-      {
-          {0, 0, 5, 0},
-          {0, 0, 5, 0},
-          {0, 5, 5, 0},
-          {0, 0, 0, 0}
-          },
+      {{0, 0, 5, 0}, {0, 0, 5, 0}, {0, 5, 5, 0}, {0, 0, 0, 0}},
       // S
-      {
-          {0, 0, 0, 0},
-          {0, 0, 6, 6},
-          {0, 6, 6, 0},
-          {0, 0, 0, 0}
-       },
+      {{0, 0, 0, 0}, {0, 0, 6, 6}, {0, 6, 6, 0}, {0, 0, 0, 0}},
       // Z
-      {
-          {0, 0, 0, 0},
-          {7, 7, 0, 0},
-          {0, 7, 7, 0},
-          {0, 0, 0, 0}
-      }
-  };
+      {{0, 0, 0, 0}, {7, 7, 0, 0}, {0, 7, 7, 0}, {0, 0, 0, 0}}};
 
   int **newFigure = createMatrix(FIGURE_SIZE, FIGURE_SIZE);
 
@@ -166,7 +127,6 @@ bool collision() {
   int **currentFigure = context->currentFigure;
 
   bool collision = false;
-  bool shouldAttach = false;
 
   for (int i = 0; i < FIGURE_SIZE; i++) {
     for (int j = 0; j < FIGURE_SIZE; j++) {
@@ -175,7 +135,6 @@ bool collision() {
         int boardY = context->figureY + i;
 
         if (boardY >= FIELD_HEIGHT) {
-          shouldAttach = true;
           collision = true;
         }
 
@@ -187,21 +146,10 @@ bool collision() {
 
           if (fieldValue != 0 && fieldValue != currentFigure[i][j]) {
             collision = true;
-
-            int belowY = boardY + 1;
-            if (belowY >= FIELD_HEIGHT ||
-                (pixelInField(boardX, belowY) &&
-                 context->gameStateInfo.field[belowY][boardX] != 0)) {
-              shouldAttach = true;
-            }
           }
         }
       }
     }
-  }
-
-  if (shouldAttach) {
-    context->attaching = 1;
   }
 
   return collision;
@@ -269,15 +217,24 @@ void attachFigureToField() {
 void processShift() {
   GameContext_t *context = getCurrentContext();
   if (context->userInput == Left) {
-    moveFigureLeft(context);
+    moveFigureLeft();
   } else if (context->userInput == Right) {
-    moveFigureRight(context);
+    moveFigureRight();
   } else if (context->userInput == Down) {
-    moveFigureDown(context);
+    moveFigureDown();
   } else if (context->userInput == Action) {
-    if (!ifSquare()) rotationFigure(context);
+    if (!ifSquare()) rotationFigure();
   }
   context->shiftRequested = false;
+}
+
+bool processAttaching() {
+  GameContext_t *context = getCurrentContext();
+  bool attaching = moveFigureDown();
+  if (!attaching) {
+    moveFigureUp();
+  }
+  return attaching;
 }
 
 GameContext_t *getCurrentContext() {
@@ -297,10 +254,10 @@ GameInfo_t updateCurrentState() {
   GameInfo_t currentGameInfo;
   if (firstCall) {
     firstCall = false;
-  } else {
+  } else if (!gameContext->gameStateInfo.pause) {
     switch (gameContext->currentState) {
       case GameState_Start:
-        transitionTo(gameContext, GameState_Spawn);
+        transitionTo(GameState_Spawn);
         break;
 
       case GameState_Spawn:
@@ -308,21 +265,18 @@ GameInfo_t updateCurrentState() {
         break;
 
       case GameState_Moving:
-        if (gameContext->attaching) {
-          transitionTo(gameContext, GameState_Attaching);
-        } else if (gameContext->shiftRequested ) {
-          transitionTo(gameContext, GameState_Shifting);
-        } else if (gameContext->shiftRequested &&
-                   gameContext->userInput == Pause) {
-          if (gameContext->gameStateInfo.pause == 0)
-            gameContext->gameStateInfo.pause = 1;
-          else if (gameContext->gameStateInfo.pause == 1)
-            gameContext->gameStateInfo.pause = 0;
+        if (processAttaching()) {
+          transitionTo(GameState_Attaching);
+        } else if (gameContext->shiftRequested) {
+          if (timer())
+            transitionTo(GameState_Moving);
+          else
+            transitionTo(GameState_Shifting);
         } else if (gameContext->shiftRequested ||
                    gameContext->userInput == Terminate) {
           freeGame();
         } else if (timer()) {
-          transitionTo(gameContext, GameState_Moving);
+          transitionTo(GameState_Moving);
         }
         break;
 
@@ -332,9 +286,9 @@ GameInfo_t updateCurrentState() {
 
       case GameState_Attaching:
         if (!gameContext->gameOver) {
-          transitionTo(gameContext, GameState_Spawn);
+          transitionTo(GameState_Spawn);
         } else {
-          transitionTo(gameContext, GameState_GameOver);
+          transitionTo(GameState_GameOver);
         }
         break;
 
@@ -355,6 +309,11 @@ void userInput(UserAction_t action, bool hold) {
   GameContext_t *context = getCurrentContext();
 
   switch (action) {
+    case Start:
+      if (!hold) {
+        context->gameStateInfo.pause = 0;
+      }
+      break;
     case Left:
       if (!hold) {
         context->shiftRequested = true;
@@ -381,8 +340,10 @@ void userInput(UserAction_t action, bool hold) {
       break;
     case Pause:
       if (!hold) {
-        context->shiftRequested = true;
-        context->userInput = Pause;
+        if (!context->gameStateInfo.pause)
+          context->gameStateInfo.pause = 1;
+        else
+          context->gameStateInfo.pause = 0;
       }
       break;
     case Terminate:
@@ -463,10 +424,23 @@ void moveFigureLeft() {
   if (collision()) context->figureX++;
 }
 
-void moveFigureDown() {
+bool moveFigureDown() {
+  bool attaching = false;
   GameContext_t *context = getCurrentContext();
   context->figureY++;
-  if (collision()) context->figureY--;
+  if (collision()) {
+    context->figureY--;
+    attaching = true;
+  }
+  return attaching;
+}
+
+bool moveFigureUp() {
+  GameContext_t *context = getCurrentContext();
+  context->figureY--;
+  if (collision()) {
+    context->figureY++;
+  }
 }
 
 int clearLines() {

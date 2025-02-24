@@ -17,6 +17,7 @@ int **createFigure(int figureNum);
 bool collision();
 bool pixelInField(int x, int y);
 void processShift();
+bool processAttaching();
 void initScore();
 void countScore(int lines);
 void countSpeed();
@@ -34,7 +35,8 @@ void attachFigureToField();
 
 void moveFigureRight();
 void moveFigureLeft();
-void moveFigureDown();
+bool moveFigureDown();
+bool moveFigureUp();
 void rotationFigure();
 
 void initializeGame(GameContext_t *gameContext, bool *checkInit);

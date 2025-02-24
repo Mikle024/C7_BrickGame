@@ -20,6 +20,9 @@ int main(void) {
     if (ch != ERR) {
       bool hold = false;
       switch (ch) {
+        case ' ':
+          userInput(Start, hold);
+          break;
         case KEY_LEFT:
           userInput(Left, hold);
           break;
