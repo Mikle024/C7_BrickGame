@@ -1,24 +1,26 @@
-#include "../inc/s21_brick_game.h"
+#include "gui/cli/inc/s21_frontend.h"
+
+void gameLoop(WinCurses *winGame);
 
 int main(void) {
-  WIN_INIT(50);
-  print_overlay();
+  WinCurses *winGame = initCurses();
+  gameLoop(winGame);
+  if (winGame) freeCurses(winGame);
 
-  initRandom();
+  return 0;
+}
 
+void gameLoop(WinCurses *winGame) {
   GameInfo_t currentGameInfo = updateCurrentState();
-
-  while (1) {
-    if (currentGameInfo.field == NULL || currentGameInfo.next == NULL) {
-      printw("EXIT\n");
-      break;
-    }
-
-    frontPrint(&currentGameInfo);
+  int lastKey = ERR;
+  while (currentGameInfo.field != NULL || currentGameInfo.next != NULL) {
+    printFrontend(&currentGameInfo, winGame);
 
     int ch = getch();
+    bool hold = (ch == lastKey);
+
     if (ch != ERR) {
-      bool hold = false;
+      lastKey = ch;
       switch (ch) {
         case ' ':
           userInput(Start, hold);
@@ -32,26 +34,19 @@ int main(void) {
         case KEY_DOWN:
           userInput(Down, hold);
           break;
-        case KEY_UP:
-          userInput(Action, hold);
-          break;
         case 'p':
           userInput(Pause, hold);
           break;
-        case 'q':
-          userInput(Terminate, hold);
+        case KEY_UP:
+          userInput(Action, hold);
           break;
         default:
           break;
       }
     }
 
+    lastKey = (ch != ERR) ? ch : -1;
     currentGameInfo = updateCurrentState();
-
-    refresh();
+    napms(16);
   }
-
-  endwin();
-
-  return 0;
 }

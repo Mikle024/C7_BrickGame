@@ -7,50 +7,41 @@
 #include <string.h>
 #include <sys/time.h>
 #include <time.h>
+#include <unistd.h>
 
 #include "s21_defines.h"
-#include "s21_objects.h"
 #include "s21_fsm.h"
+#include "s21_types.h"
 
-void dropNewFigure();
+GameContext_t *getCurrentContext();
+void initRandom(void);
+long long getCurrentTime();
+bool timer();
+int initHighScore();
+void initializeGame(GameContext_t *gameContext, bool *checkInit);
+int **createMatrix(int rows, int column);
+void freeMatrix(int **matrix, int rows);
+void freeGame();
 int **createFigure(int figureNum);
+void dropNewFigure(int x, int y);
+void addCurrentFigureToField();
+void clearCurrentFigureFromField();
+bool attachFigureToField();
+bool ifSquare();
 bool collision();
 bool pixelInField(int x, int y);
 void processShift();
 bool processAttaching();
-void initScore();
 void countScore(int lines);
 void countSpeed();
 void updateScore();
-
-bool ifSquare();
-
 int clearLines();
 bool fullLine(int numLine);
 void removeLine(int numLine);
-
-void addCurrentFigureToField();
-void clearCurrentFigureFromField();
-void attachFigureToField();
-
 void moveFigureRight();
 void moveFigureLeft();
 bool moveFigureDown();
 bool moveFigureUp();
 void rotationFigure();
-
-void initializeGame(GameContext_t *gameContext, bool *checkInit);
-void freeGame();
-int **createMatrix(int rows, int column);
-void freeMatrix(int **matrix, int rows);
-
-GameContext_t *getCurrentContext();
-
-void userInput(UserAction_t action, bool hold);
-GameInfo_t updateCurrentState();
-
-void initRandom(void);
-bool timer();
-long long getCurrentTime();
 
 #endif
