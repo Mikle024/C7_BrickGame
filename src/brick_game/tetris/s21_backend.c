@@ -36,30 +36,6 @@ bool timer() {
   return result;
 }
 
-int initHighScore() {
-  FILE *fp = fopen("highScore.txt", "r");
-  int highScore = 0;
-
-  if (fp) {
-    char buffer[100];
-    if (fgets(buffer, sizeof(buffer), fp) != NULL) {
-      buffer[strcspn(buffer, "\n")] = '\0';
-
-      char *endPtr;
-      long score = strtol(buffer, &endPtr, 10);
-
-      if (endPtr == buffer || *endPtr != '\0' || score <= 0) {
-        highScore = 0;
-      } else {
-        highScore = (int)score;
-      }
-    }
-    fclose(fp);
-  }
-
-  return highScore;
-}
-
 void initializeGame(GameContext_t *context, bool *checkInit) {
   context->currentState = GameState_Start;
 
@@ -80,30 +56,6 @@ void initializeGame(GameContext_t *context, bool *checkInit) {
   context->lastTime = 0;
 
   *checkInit = true;
-}
-
-int **createMatrix(int rows, int column) {
-  int **newMatrix = (int **)malloc(rows * sizeof(int *));
-  if (newMatrix) {
-    for (int i = 0; i < rows; i++) {
-      newMatrix[i] = (int *)malloc(column * sizeof(int));
-      if (newMatrix[i]) {
-        for (int j = 0; j < column; j++) {
-          newMatrix[i][j] = 0;
-        }
-      }
-    }
-    return newMatrix;
-  }
-}
-
-void freeMatrix(int **matrix, int rows) {
-  if (matrix) {
-    for (int i = 0; i < rows; i++) {
-      free(matrix[i]);
-    }
-    free(matrix);
-  }
 }
 
 void freeGame() {
@@ -175,35 +127,49 @@ void dropNewFigure(int x, int y) {
   context->oldFigureY = y;
 }
 
+/**
+ * @brief Добавляет текущую фигуру на игровое поле.
+ */
 void addCurrentFigureToField() {
   GameContext_t *context = getCurrentContext();
+  if (!context || !context->currentFigure || !context->gameStateInfo.field) {
+    return;
+  }
+  
   for (int i = 0; i < FIGURE_SIZE; i++) {
     for (int j = 0; j < FIGURE_SIZE; j++) {
-      if (context->currentFigure[i][j] != 0 && context->figureY + i >= 0 &&
-          context->figureY + i < FIELD_HEIGHT && context->figureX + j >= 0 &&
-          context->figureX + j < FIELD_WIDTH) {
-        context->gameStateInfo
-            .field[context->figureY + i][context->figureX + j] =
-            context->currentFigure[i][j];
+      if (context->currentFigure[i][j] != 0) {
+        int fieldX = context->figureX + j;
+        int fieldY = context->figureY + i;
+
+        if (pixelInField(fieldX, fieldY)) {
+          context->gameStateInfo.field[fieldY][fieldX] = context->currentFigure[i][j];
+        }
       }
     }
   }
 }
 
+/**
+ * @brief Очищает текущую фигуру с игрового поля (в старой позиции).
+ */
 void clearCurrentFigureFromField() {
   GameContext_t *context = getCurrentContext();
+  if (!context || !context->currentFigure || !context->gameStateInfo.field) {
+    return;
+  }
+  
   for (int i = 0; i < FIGURE_SIZE; i++) {
     for (int j = 0; j < FIGURE_SIZE; j++) {
       int fieldX = context->oldFigureX + j;
       int fieldY = context->oldFigureY + i;
 
-      if (context->currentFigure[i][j] != 0 && fieldY >= 0 &&
-          fieldY < FIELD_HEIGHT && fieldX >= 0 && fieldX < FIELD_WIDTH) {
+      if (pixelInField(fieldX, fieldY)) {
         context->gameStateInfo.field[fieldY][fieldX] = 0;
       }
     }
   }
-
+  
   context->oldFigureX = context->figureX;
   context->oldFigureY = context->figureY;
 }
@@ -237,24 +203,37 @@ bool attachFigureToField() {
   return outOfField;
 }
 
-bool ifSquare() {
-  bool ifSquare = false;
+bool isSquareFigure() {
   GameContext_t *context = getCurrentContext();
+  
+  if (!context || !context->currentFigure) {
+    return false;
+  }
 
   for (int i = 0; i < FIGURE_SIZE; i++) {
     for (int j = 0; j < FIGURE_SIZE; j++) {
-      if (context->currentFigure[i][j] == 2) ifSquare = true;
+      if (context->currentFigure[i][j] == 2) {
+        return true;  // Если найден хотя бы один элемент со значением 2, это квадратная фигура
+      }
     }
   }
 
-  return ifSquare;
+  return false;
 }
 
+/**
+ * @brief Проверяет наличие коллизий для текущей фигуры.
+ *
+ * @return true Если есть коллизия.
+ * @return false Если нет коллизии.
+ */
 bool collision() {
   GameContext_t *context = getCurrentContext();
+  if (!context || !context->currentFigure || !context->gameStateInfo.field) {
+    return true;  // Если данные недоступны, считаем что коллизия произошла
+  }
+  
   int **currentFigure = context->currentFigure;
-
-  bool collision = false;
 
   for (int i = 0; i < FIGURE_SIZE; i++) {
     for (int j = 0; j < FIGURE_SIZE; j++) {
@@ -262,23 +241,22 @@ bool collision() {
         int boardX = context->figureX + j;
         int boardY = context->figureY + i;
 
-        if (boardY >= FIELD_HEIGHT) collision = true;
+        // Коллизия с нижней, левой или правой границей
+        if (boardY >= FIELD_HEIGHT || boardX < 0 || boardX >= FIELD_WIDTH) {
+          return true;
+        }
 
-        if ((boardX < 0 || boardX >= FIELD_WIDTH)) collision = true;
-
-        if (pixelInField(boardX, boardY) &&
-            context->gameStateInfo.field[boardY][boardX] != 0) {
-          int fieldValue = context->gameStateInfo.field[boardY][boardX];
-
-          if (fieldValue != 0 && fieldValue != currentFigure[i][j]) {
-            collision = true;
-          }
+        // Коллизия с другими блоками на поле (только если точка находится на поле)
+        if (pixelInField(boardX, boardY) && 
+            context->gameStateInfo.field[boardY][boardX] != 0 &&
+            context->gameStateInfo.field[boardY][boardX] != currentFigure[i][j]) {
+          return true;
         }
       }
     }
   }
 
-  return collision;
+  return false;
 }
 
 bool pixelInField(int x, int y) {
@@ -294,7 +272,7 @@ void processShift() {
   } else if (context->userInput == Down) {
     moveFigureDown();
   } else if (context->userInput == Action) {
-    if (!ifSquare()) rotationFigure();
+    if (!isSquareFigure()) rotationFigure();
   }
   context->shiftRequested = false;
 }
@@ -307,41 +285,60 @@ bool processAttaching() {
   return attaching;
 }
 
+/**
+ * @brief Подсчитывает очки на основе удаленных линий и обновляет уровень и скорость игры.
+ *
+ * @param lines Количество удаленных линий.
+ */
 void countScore(int lines) {
   GameContext_t *context = getCurrentContext();
-  int const scores[] = {0, 100, 300, 700, 1500};
+  if (!context) {
+    return;
+  }
+  
+  // Таблица очков в зависимости от количества удаленных линий
+  static const int scores[] = {0, 100, 300, 700, 1500};
+  
+  // Безопасная проверка индекса
+  int scoreIndex = (lines >= 0 && lines <= 4) ? lines : 0;
 
-  context->gameStateInfo.score += scores[lines];
+  context->gameStateInfo.score += scores[scoreIndex];
   context->gameStateInfo.level = 1 + (context->gameStateInfo.score / 600);
 
+  // Обновляем скорость в зависимости от уровня
   countSpeed();
 
-  if (context->gameStateInfo.score >= context->gameStateInfo.high_score) {
+  // Проверяем, не побили ли рекорд
+  if (context->gameStateInfo.score > context->gameStateInfo.high_score) {
     context->gameStateInfo.high_score = context->gameStateInfo.score;
-    updateScore();
+    updateScore(context->gameStateInfo.score);
   }
 }
 
+/**
+ * @brief Вычисляет скорость падения фигур в зависимости от уровня.
+ */
 void countSpeed() {
   GameContext_t *context = getCurrentContext();
+  if (!context) {
+    return;
+  }
+  
   int delay = START_DELAY;
   int min_delay = MIN_DELAY;
-  int max_lvl = MAX_LEVEL;
+  int max_level = MAX_LEVEL;
 
-  if (context->gameStateInfo.level <= max_lvl)
-    context->gameStateInfo.speed =
-        delay - (context->gameStateInfo.level - 1) *
-                    ((delay - min_delay) / (max_lvl - 1));
-  else
+  // Ограничиваем уровень
+  int level = context->gameStateInfo.level;
+  if (level > max_level) {
+    level = max_level;
+  }
+
+  // Линейно уменьшаем задержку с увеличением уровня
+  if (level <= max_level) {
+    context->gameStateInfo.speed = delay - (level - 1) * ((delay - min_delay) / (max_level - 1));
+  } else {
     context->gameStateInfo.speed = min_delay;
-}
-
-void updateScore() {
-  GameContext_t *context = getCurrentContext();
-  FILE *fp = fopen("highScore.txt", "w");
-  if (fp) {
-    fprintf(fp, "%d", context->gameStateInfo.score);
-    fclose(fp);
   }
 }
 
@@ -394,6 +391,11 @@ void moveFigureLeft() {
 bool moveFigureDown() {
   bool attaching = false;
   GameContext_t *context = getCurrentContext();
+  
+  if (!context) {
+    return true;  // Если данные недоступны, считаем что прикрепление должно произойти
+  }
+  
   context->figureY++;
   if (collision()) {
     context->figureY--;
@@ -410,25 +412,43 @@ bool moveFigureUp() {
   }
 }
 
+/**
+ * @brief Вращает текущую фигуру (кроме квадрата).
+ */
 void rotationFigure() {
   GameContext_t *context = getCurrentContext();
-  int **shiftFigure = createMatrix(FIGURE_SIZE, FIGURE_SIZE);
+  if (!context || !context->currentFigure) {
+    return;
+  }
+  
+  // Создаем временную матрицу для повернутой фигуры
+  int **rotatedFigure = createMatrix(FIGURE_SIZE, FIGURE_SIZE);
+  if (!rotatedFigure) {
+    return; // Не удалось выделить память
+  }
+  
   int **currentFigure = context->currentFigure;
 
+  // Очищаем текущую фигуру с поля перед вращением
   clearCurrentFigureFromField();
+  
+  // Вращаем фигуру на 90 градусов (по часовой стрелке)
   for (int i = 0; i < FIGURE_SIZE; i++) {
     for (int j = 0; j < FIGURE_SIZE; j++) {
-      shiftFigure[j][FIGURE_SIZE - i - 1] = currentFigure[i][j];
+      rotatedFigure[j][FIGURE_SIZE - i - 1] = currentFigure[i][j];
     }
   }
 
-  context->currentFigure = shiftFigure;
+  // Временно заменяем фигуру на повернутую для проверки коллизий
+  context->currentFigure = rotatedFigure;
 
+  // Проверяем, возможно ли такое вращение
   if (collision()) {
+    // Вращение невозможно, возвращаем старую фигуру
     context->currentFigure = currentFigure;
-    freeMatrix(shiftFigure, FIGURE_SIZE);
+    freeMatrix(rotatedFigure, FIGURE_SIZE);
   } else {
-    context->currentFigure = shiftFigure;
+    // Вращение возможно, используем новую фигуру
     freeMatrix(currentFigure, FIGURE_SIZE);
   }
 }
