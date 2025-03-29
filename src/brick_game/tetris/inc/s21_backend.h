@@ -10,8 +10,10 @@
 #include <unistd.h>
 
 #include "s21_defines.h"
+#include "s21_file_utils.h"
 #include "s21_fsm.h"
 #include "s21_types.h"
+#include "s21_utils.h"
 
 GameContext_t *getCurrentContext();
 void initRandom(void);
@@ -19,15 +21,13 @@ long long getCurrentTime();
 bool timer();
 int initHighScore();
 void initializeGame(GameContext_t *gameContext, bool *checkInit);
-int **createMatrix(int rows, int column);
-void freeMatrix(int **matrix, int rows);
 void freeGame();
 int **createFigure(int figureNum);
 void dropNewFigure(int x, int y);
 void addCurrentFigureToField();
 void clearCurrentFigureFromField();
 bool attachFigureToField();
-bool ifSquare();
+bool isSquareFigure();
 bool collision();
 bool pixelInField(int x, int y);
 void processShift();

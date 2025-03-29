@@ -17,20 +17,49 @@ void runTestcase(Suite *testcase) {
 }
 
 void runTests(void) {
-  Suite *listCases[] = {suiteGetCurrentContext(),
+  Suite *listCases[] = {
+                        // Тесты для утилитных функций
+                        suiteCreateMatrix(),
+                        suiteFreeMatrix(),
+                        
+                        // Тесты для файловых операций
+                        suiteInitHighScore(),
+                        suiteUpdateScore(),
+                        
+                        // Тесты для core механик
+                        suiteGetCurrentContext(),
                         suiteInitRandom(),
                         suiteGetCurrentTime(),
                         suiteTimer(),
-                        suiteInitHighScore(),
-                        suiteFreeMatrix(),
+                        suiteInitializeGame(),
                         suiteFreeGame(),
+                        suiteCreateFigure(),
                         suiteDropNewFigure(),
+                        
+                        // Тесты для операций с фигурами
                         suiteAddCurrentFigureToField(),
-                        suiteClearCurrentFigureFromField(),
+                        suiteClearCurrentFigureFromField(), 
                         suiteAttachFigureToField(),
-                        suiteIfSquare(),
+                        suiteIsSquareFigure(),
                         suiteCollision(),
-//                        suiteProcessShift(),
+                        suitePixelInField(),
+                        suiteProcessShift(),
+                        suiteProcessAttaching(),
+                        
+                        // Тесты для логики очков и уровней
+                        suiteCountScore(),
+                        suiteCountSpeed(),
+                        suiteClearLines(),
+                        suiteFullLine(),
+                        suiteRemoveLine(),
+                        
+                        // Тесты для движения фигур
+                        suiteMoveFigureRight(),
+                        suiteMoveFigureLeft(),
+                        suiteMoveFigureDown(),
+                        suiteMoveFigureUp(),
+                        suiteRotationFigure(),
+                        
                         NULL};
   for (Suite **currentTestcase = listCases; *currentTestcase != NULL;
        currentTestcase++) {

@@ -53,11 +53,18 @@ START_TEST(test_processShift_rotate) {
   context->userInput = Action;
   context->shiftRequested = true;
 
+  // Переопределим поведение isSquareFigure для теста
+  context->currentFigure = createMatrix(FIGURE_SIZE, FIGURE_SIZE);
+  // Создаем не квадратную фигуру (значение 1 вместо 2)
+  context->currentFigure[1][1] = 1;
+
   processShift();
 
-  // Если фигура не квадрат, она должна повернуться (сложно тестировать без
-  // getCurrentFigureState) Например, проверка косвенного признака
+  // Проверяем, что shiftRequested сбрасывается
   ck_assert_int_eq(context->shiftRequested, false);
+  
+  // Очистка
+  freeMatrix(context->currentFigure, FIGURE_SIZE);
 }
 END_TEST
 
