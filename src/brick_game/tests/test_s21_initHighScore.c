@@ -1,7 +1,7 @@
 #include "s21_tests.h"
 
 START_TEST(test_highscore_no_file) {
-  remove("highScore.txt");  // Удаляем файл, если он существует
+  remove("highScore.txt");
   ck_assert_int_eq(initHighScore(), 0);
 }
 END_TEST
@@ -33,6 +33,23 @@ START_TEST(test_highscore_valid_value) {
 }
 END_TEST
 
+START_TEST(test_highscore_empty_file) {
+  FILE *fp = fopen("highScore.txt", "w");
+  fclose(fp);
+
+  ck_assert_int_eq(initHighScore(), 0);
+}
+END_TEST
+
+START_TEST(test_highscore_zero_value) {
+  FILE *fp = fopen("highScore.txt", "w");
+  fprintf(fp, "0\n");
+  fclose(fp);
+
+  ck_assert_int_eq(initHighScore(), 0);
+}
+END_TEST
+
 Suite *suiteInitHighScore(void) {
   Suite *suite = suite_create("suite_initHighScore");
   TCase *tc = tcase_create("tc_initHighScore");
@@ -41,6 +58,8 @@ Suite *suiteInitHighScore(void) {
   tcase_add_test(tc, test_highscore_invalid_content);
   tcase_add_test(tc, test_highscore_negative_value);
   tcase_add_test(tc, test_highscore_valid_value);
+  tcase_add_test(tc, test_highscore_empty_file);
+  tcase_add_test(tc, test_highscore_zero_value);
 
   suite_add_tcase(suite, tc);
   return suite;

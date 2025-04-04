@@ -9,24 +9,39 @@ L_FLAGS		= -std=c11 -Wall -Werror -Wextra
 
 all: install
 
-install: s21_tetris.a
+install:
+	$(MAKE) -C brick_game $(BACKEND)
 	mkdir -p ../build
 	$(CC) $(L_FLAGS) $(MAIN)  $(FRONT) -lncurses -L. brick_game/$(BACKEND) -o $(OUT_GAME)
 	mv $(OUT_GAME) ../build/
+	rm brick_game/s21_tetris.a && rm -r brick_game/object
 
-s21_tetris.a:
-	$(MAKE) -C brick_game $(BACKEND)
+uninstall:
+	rm -rf ../build/$(OUT_GAME)
 
 test:
 	$(MAKE) -C brick_game test
 
+dvi:
+	@bash scripts/generate_dvi.sh
+
+dist: clean install
+	mkdir -p ../build
+	tar -cf ../build/BrickGame.tar ./*
+	gzip ../build/BrickGame.tar
+	mv ../build/BrickGame.tar.gz ../build/BrickGame.tgz
+	rm ../build/s21_BrickGame
+
+gcov_report:
+	$(MAKE) -C brick_game gcov_report
+
+rebuild: clean all
+
 clang_format:
 	$(MAKE) -C brick_game clang_format
 	cp ../materials/linters/.clang-format .clang-format
-	clang-format -i *.c $(FRONT) gui/cli/inc/*.h
+	clang-format -i *.c *.h $(FRONT) gui/cli/inc/*.h
 	rm .clang-format
-
-rebuild: clean all
 
 clean:
 	$(MAKE) -C brick_game clean

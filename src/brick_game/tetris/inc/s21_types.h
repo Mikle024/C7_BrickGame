@@ -6,12 +6,13 @@
  */
 typedef enum {
   Start,     /**< Start the game. */
-  Left,      /**< Move the figure to the left. */
-  Right,     /**< Move the figure to the right. */
-  Down,      /**< Move the figure down. */
-  Action,    /**< Perform an action. */
   Pause,     /**< Pause the game. */
   Terminate, /**< Terminate the game. */
+  Left,      /**< Move the figure to the left. */
+  Right,     /**< Move the figure to the right. */
+  Up,        /**< Not used in this game. */
+  Down,      /**< Move the figure down. */
+  Action,    /**< Perform an action. */
 } UserAction_t;
 
 /**
@@ -40,11 +41,9 @@ typedef struct {
   GameState currentState;
   GameInfo_t gameStateInfo;
   UserAction_t userInput;
-  bool holdAction;
   int **currentFigure;
   int figureX, figureY;
   int oldFigureX, oldFigureY;
-  int exit;
   bool shiftRequested;
   long long lastTime;
 } GameContext_t;

@@ -1,108 +1,192 @@
 #include "s21_tests.h"
 
-START_TEST(test_collision_bottom) {
+int collisionWithContext(GameContext_t *context);
+
+START_TEST(test_collision_no_overlap) {
+  setupTest();
   GameContext_t *context = getCurrentContext();
   ck_assert_ptr_nonnull(context);
 
-  // Создаем фигуру I (индекс 0)
-  context->currentFigure =
-      createFigure(0);  // Используем createFigure для создания фигуры
+  for (int i = 0; i < FIELD_HEIGHT; i++) {
+    for (int j = 0; j < FIELD_WIDTH; j++) {
+      context->gameStateInfo.field[i][j] = 0;
+    }
+  }
 
-  // Устанавливаем координаты фигуры так, чтобы она была ниже поля
-  context->figureY = FIELD_HEIGHT;  // фигура "выпадает" за нижнюю границу
+  if (context->currentFigure) {
+    freeMatrix(context->currentFigure, FIGURE_SIZE);
+    context->currentFigure = NULL;
+  }
+  context->currentFigure = createMatrix(FIGURE_SIZE, FIGURE_SIZE);
 
-  // Проверяем, что есть столкновение
-  ck_assert_int_eq(collision(), true);
+  context->currentFigure[1][1] = 1;
+  context->currentFigure[2][1] = 1;
+  context->currentFigure[3][1] = 1;
+  context->currentFigure[3][2] = 1;
 
-  // Очистка памяти
-  freeMatrix(context->currentFigure, FIGURE_SIZE);
+  context->figureX = 3;
+  context->figureY = 3;
+
+  ck_assert_int_eq(collision(), 0);
+
+  cleanupTest();
 }
 END_TEST
 
-START_TEST(test_collision_left_right) {
+START_TEST(test_collision_with_border) {
+  setupTest();
   GameContext_t *context = getCurrentContext();
   ck_assert_ptr_nonnull(context);
 
-  // Создаем фигуру I (индекс 0)
-  context->currentFigure =
-      createFigure(0);  // Используем createFigure для создания фигуры
+  for (int i = 0; i < FIELD_HEIGHT; i++) {
+    for (int j = 0; j < FIELD_WIDTH; j++) {
+      context->gameStateInfo.field[i][j] = 0;
+    }
+  }
 
-  // Устанавливаем координаты фигуры так, чтобы она находилась за пределами поля
-  // по X
-  context->figureX = -1;  // фигура выходит за левую границу
+  if (context->currentFigure) {
+    freeMatrix(context->currentFigure, FIGURE_SIZE);
+    context->currentFigure = NULL;
+  }
+  context->currentFigure = createMatrix(FIGURE_SIZE, FIGURE_SIZE);
 
-  // Проверяем, что есть столкновение
-  ck_assert_int_eq(collision(), true);
+  context->currentFigure[1][1] = 1;
+  context->currentFigure[2][1] = 1;
+  context->currentFigure[3][1] = 1;
+  context->currentFigure[3][2] = 1;
 
-  // Теперь проверим для правой границы
-  context->figureX = FIELD_WIDTH;  // фигура выходит за правую границу
-  ck_assert_int_eq(collision(), true);
+  context->figureX = -2;
+  context->figureY = 3;
+  ck_assert_int_eq(collision(), 1);
 
-  // Очистка памяти
-  freeMatrix(context->currentFigure, FIGURE_SIZE);
+  context->figureX = FIELD_WIDTH - 1;
+  context->figureY = 3;
+  ck_assert_int_eq(collision(), 1);
+
+  context->figureX = 3;
+  context->figureY = FIELD_HEIGHT - 3;
+  ck_assert_int_eq(collision(), 1);
+
+  cleanupTest();
 }
 END_TEST
 
-// START_TEST(test_collision_with_other_blocks) {
-//   GameContext_t *context = getCurrentContext();
-//   ck_assert_ptr_nonnull(context);
-//
-//   // Создаем фигуру I (индекс 0)
-//   context->currentFigure =
-//       createFigure(0);  // Используем createFigure для создания фигуры
-//
-//   // Заполняем поле фигурами, с которыми будет столкновение
-//   context->gameStateInfo.field[3][1] =
-//       2;  // Столкновение с блоком на этом месте
-//
-//   // Устанавливаем координаты фигуры
-//   context->figureY = 0;
-//   context->figureX = 1;
-//
-//   // Проверяем, что есть столкновение с блоком
-//   ck_assert_int_eq(collision(), true);
-//
-//   // Очистка памяти
-//   freeMatrix(context->currentFigure, FIGURE_SIZE);
-// }
-// END_TEST
-//
-// START_TEST(test_collision_no_collision) {
-//   GameContext_t *context = getCurrentContext();
-//   ck_assert_ptr_nonnull(context);
-//
-//   // Создаем фигуру I (индекс 0)
-//   context->currentFigure =
-//       createFigure(0);  // Используем createFigure для создания фигуры
-//
-//   // Заполняем поле пустыми значениями, нет столкновений
-//   for (int i = 0; i < FIELD_HEIGHT; i++) {
-//     for (int j = 0; j < FIELD_WIDTH; j++) {
-//       context->gameStateInfo.field[i][j] = 0;
-//     }
-//   }
-//
-//   // Устанавливаем координаты фигуры так, чтобы не было столкновений
-//   context->figureY = 0;
-//   context->figureX = 4;
-//
-//   // Проверяем, что нет столкновений
-//   ck_assert_int_eq(collision(), false);
-//
-//   // Очистка памяти
-//   freeMatrix(context->currentFigure, FIGURE_SIZE);
-// }
-// END_TEST
+START_TEST(test_collision_with_blocks) {
+  setupTest();
+  GameContext_t *context = getCurrentContext();
+  ck_assert_ptr_nonnull(context);
+
+  for (int i = 0; i < FIELD_HEIGHT; i++) {
+    for (int j = 0; j < FIELD_WIDTH; j++) {
+      context->gameStateInfo.field[i][j] = 0;
+    }
+  }
+
+  if (context->currentFigure) {
+    freeMatrix(context->currentFigure, FIGURE_SIZE);
+    context->currentFigure = NULL;
+  }
+  context->currentFigure = createMatrix(FIGURE_SIZE, FIGURE_SIZE);
+
+  context->currentFigure[1][1] = 1;
+  context->currentFigure[2][1] = 1;
+  context->currentFigure[3][1] = 1;
+  context->currentFigure[3][2] = 1;
+
+  context->figureX = 3;
+  context->figureY = 3;
+
+  context->gameStateInfo.field[0][0] = 2;
+  ck_assert_int_eq(collision(), 0);
+
+  context->figureY = 3;
+  context->gameStateInfo.field[7][4] = 2;
+
+  context->figureY = 6;
+  ck_assert_int_eq(collision(), 1);
+
+  cleanupTest();
+}
+END_TEST
+
+START_TEST(test_collision_with_null_field) {
+  GameContext_t context;
+  memset(&context, 0, sizeof(GameContext_t));
+
+  context.currentFigure = createMatrix(FIGURE_SIZE, FIGURE_SIZE);
+  context.currentFigure[0][0] = 1;
+
+  context.gameStateInfo.field = NULL;
+
+  int result = collisionWithContext(&context);
+
+  freeMatrix(context.currentFigure, FIGURE_SIZE);
+
+  ck_assert_int_eq(result, 1);
+}
+END_TEST
+
+START_TEST(test_collision_with_null_figure) {
+  GameContext_t context;
+  memset(&context, 0, sizeof(GameContext_t));
+
+  context.gameStateInfo.field = createMatrix(FIELD_HEIGHT, FIELD_WIDTH);
+
+  context.currentFigure = NULL;
+
+  int result = collisionWithContext(&context);
+
+  freeMatrix(context.gameStateInfo.field, FIELD_HEIGHT);
+
+  ck_assert_int_eq(result, 1);
+}
+END_TEST
+
+START_TEST(test_collision_with_negative_y) {
+  setupTest();
+  GameContext_t *context = getCurrentContext();
+  ck_assert_ptr_nonnull(context);
+
+  for (int i = 0; i < FIELD_HEIGHT; i++) {
+    for (int j = 0; j < FIELD_WIDTH; j++) {
+      context->gameStateInfo.field[i][j] = 0;
+    }
+  }
+
+  if (context->currentFigure) {
+    freeMatrix(context->currentFigure, FIGURE_SIZE);
+    context->currentFigure = NULL;
+  }
+  context->currentFigure = createMatrix(FIGURE_SIZE, FIGURE_SIZE);
+
+  context->currentFigure[1][1] = 1;
+  context->currentFigure[2][1] = 1;
+  context->currentFigure[3][1] = 1;
+  context->currentFigure[3][2] = 1;
+
+  context->figureX = 3;
+  context->figureY = -1;
+  ck_assert_int_eq(collision(), 0);
+
+  context->gameStateInfo.field[0][4] = 2;
+  ck_assert_int_eq(collision(), 1);
+
+  cleanupTest();
+}
+END_TEST
 
 Suite *suiteCollision(void) {
   Suite *s = suite_create("suite_collision");
-  TCase *tc_core = tcase_create("tc_collision");
+  TCase *tc = tcase_create("tc_collision");
 
-  tcase_add_test(tc_core, test_collision_bottom);
-  tcase_add_test(tc_core, test_collision_left_right);
-//    tcase_add_test(tc_core, test_collision_with_other_blocks);
-//    tcase_add_test(tc_core, test_collision_no_collision);
+  tcase_add_checked_fixture(tc, setupTest, cleanupTest);
+  tcase_add_test(tc, test_collision_no_overlap);
+  tcase_add_test(tc, test_collision_with_border);
+  tcase_add_test(tc, test_collision_with_blocks);
+  tcase_add_test(tc, test_collision_with_null_field);
+  tcase_add_test(tc, test_collision_with_null_figure);
+  tcase_add_test(tc, test_collision_with_negative_y);
 
-  suite_add_tcase(s, tc_core);
+  suite_add_tcase(s, tc);
   return s;
 }

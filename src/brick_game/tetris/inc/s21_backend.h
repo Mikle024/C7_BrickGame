@@ -2,16 +2,14 @@
 #define S21_BACKEND_H
 
 #include <stdbool.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <sys/time.h>
-#include <time.h>
-#include <unistd.h>
 
 #include "s21_defines.h"
+#include "s21_file_utils.h"
 #include "s21_fsm.h"
 #include "s21_types.h"
+#include "s21_utils.h"
 
 GameContext_t *getCurrentContext();
 void initRandom(void);
@@ -19,29 +17,24 @@ long long getCurrentTime();
 bool timer();
 int initHighScore();
 void initializeGame(GameContext_t *gameContext, bool *checkInit);
-int **createMatrix(int rows, int column);
-void freeMatrix(int **matrix, int rows);
 void freeGame();
-int **createFigure(int figureNum);
-void dropNewFigure(int x, int y);
+int **createFigure(const int figureNum);
+void dropNewFigure(const int x, const int y);
 void addCurrentFigureToField();
 void clearCurrentFigureFromField();
-bool attachFigureToField();
-bool ifSquare();
+void attachFigureToField();
+bool isSquareFigure();
 bool collision();
-bool pixelInField(int x, int y);
-void processShift();
-bool processAttaching();
-void countScore(int lines);
+bool pixelInField(const int x, const int y);
+void countScore(const int lines);
 void countSpeed();
-void updateScore();
 int clearLines();
-bool fullLine(int numLine);
-void removeLine(int numLine);
+bool fullLine(const int numLine);
+void removeLine(const int numLine);
 void moveFigureRight();
 void moveFigureLeft();
-bool moveFigureDown();
-bool moveFigureUp();
+void moveFigureDown();
+void moveFigureUp();
 void rotationFigure();
 
 #endif
