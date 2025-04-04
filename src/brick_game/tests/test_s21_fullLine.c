@@ -1,81 +1,120 @@
 #include "s21_tests.h"
 
-// Тест для полной линии (все ячейки заполнены)
 START_TEST(test_fullLine_true) {
+  setupTest();
   GameContext_t *context = getCurrentContext();
   ck_assert_ptr_nonnull(context);
-  
-  // Создаем и заполняем поле
+
+  if (context->gameStateInfo.field) {
+    freeMatrix(context->gameStateInfo.field, FIELD_HEIGHT);
+  }
   context->gameStateInfo.field = createMatrix(FIELD_HEIGHT, FIELD_WIDTH);
-  
-  // Заполняем одну линию полностью (все ячейки ненулевые)
+
   int testLine = 5;
   for (int j = 0; j < FIELD_WIDTH; j++) {
     context->gameStateInfo.field[testLine][j] = 1;
   }
-  
-  // Проверяем, что функция определяет линию как полную
+
   ck_assert_int_eq(fullLine(testLine), true);
-  
-  // Очищаем ресурсы
-  freeMatrix(context->gameStateInfo.field, FIELD_HEIGHT);
-  context->gameStateInfo.field = NULL;
+
+  cleanupTest();
 }
 END_TEST
 
-// Тест для неполной линии (есть пустые ячейки)
 START_TEST(test_fullLine_false) {
+  setupTest();
   GameContext_t *context = getCurrentContext();
   ck_assert_ptr_nonnull(context);
-  
-  // Создаем и заполняем поле
+
+  if (context->gameStateInfo.field) {
+    freeMatrix(context->gameStateInfo.field, FIELD_HEIGHT);
+  }
   context->gameStateInfo.field = createMatrix(FIELD_HEIGHT, FIELD_WIDTH);
-  
-  // Заполняем линию, оставляя одну ячейку пустой
+
   int testLine = 5;
   for (int j = 0; j < FIELD_WIDTH - 1; j++) {
     context->gameStateInfo.field[testLine][j] = 1;
   }
   context->gameStateInfo.field[testLine][FIELD_WIDTH - 1] = 0;
-  
-  // Проверяем, что функция определяет линию как неполную
+
   ck_assert_int_eq(fullLine(testLine), false);
-  
-  // Очищаем ресурсы
-  freeMatrix(context->gameStateInfo.field, FIELD_HEIGHT);
-  context->gameStateInfo.field = NULL;
+
+  cleanupTest();
 }
 END_TEST
 
-// Тест для пустой линии
 START_TEST(test_fullLine_empty) {
+  setupTest();
   GameContext_t *context = getCurrentContext();
   ck_assert_ptr_nonnull(context);
-  
-  // Создаем и заполняем поле
+
+  if (context->gameStateInfo.field) {
+    freeMatrix(context->gameStateInfo.field, FIELD_HEIGHT);
+  }
   context->gameStateInfo.field = createMatrix(FIELD_HEIGHT, FIELD_WIDTH);
-  
-  // Проверяем пустую линию (все ячейки нулевые по умолчанию)
+
   int testLine = 5;
-  
-  // Проверяем, что функция определяет линию как неполную
+
   ck_assert_int_eq(fullLine(testLine), false);
-  
-  // Очищаем ресурсы
-  freeMatrix(context->gameStateInfo.field, FIELD_HEIGHT);
-  context->gameStateInfo.field = NULL;
+
+  cleanupTest();
 }
 END_TEST
 
-// Набор тестов для функции fullLine
+START_TEST(test_fullLine_partially_filled) {
+  setupTest();
+  GameContext_t *context = getCurrentContext();
+  ck_assert_ptr_nonnull(context);
+
+  if (context->gameStateInfo.field) {
+    freeMatrix(context->gameStateInfo.field, FIELD_HEIGHT);
+  }
+  context->gameStateInfo.field = createMatrix(FIELD_HEIGHT, FIELD_WIDTH);
+
+  int testLine = 5;
+  for (int j = 0; j < FIELD_WIDTH / 2; j++) {
+    context->gameStateInfo.field[testLine][j] = 1;
+  }
+
+  ck_assert_int_eq(fullLine(testLine), false);
+
+  cleanupTest();
+}
+END_TEST
+
+START_TEST(test_fullLine_middle_empty) {
+  setupTest();
+  GameContext_t *context = getCurrentContext();
+  ck_assert_ptr_nonnull(context);
+
+  if (context->gameStateInfo.field) {
+    freeMatrix(context->gameStateInfo.field, FIELD_HEIGHT);
+  }
+  context->gameStateInfo.field = createMatrix(FIELD_HEIGHT, FIELD_WIDTH);
+
+  int testLine = 5;
+  for (int j = 0; j < FIELD_WIDTH; j++) {
+    context->gameStateInfo.field[testLine][j] = 1;
+  }
+  context->gameStateInfo.field[testLine][FIELD_WIDTH / 2] = 0;
+
+  ck_assert_int_eq(fullLine(testLine), false);
+
+  cleanupTest();
+}
+END_TEST
+
 Suite *suiteFullLine(void) {
   Suite *s = suite_create("suite_fullLine");
   TCase *tc = tcase_create("tc_fullLine");
-  
+
+  tcase_add_checked_fixture(tc, setupTest, cleanupTest);
   tcase_add_test(tc, test_fullLine_true);
   tcase_add_test(tc, test_fullLine_false);
   tcase_add_test(tc, test_fullLine_empty);
-  
+  tcase_add_test(tc, test_fullLine_partially_filled);
+  tcase_add_test(tc, test_fullLine_middle_empty);
+
   suite_add_tcase(s, tc);
   return s;
 }
