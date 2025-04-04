@@ -26,6 +26,8 @@ WinCurses *createFrontend() {
 
   refresh();
 
+  winGame->currentScreen = SCREEN_START;
+
   box(winGame->winBoard, 0, 0);
   box(winGame->winBrick, 0, 0);
   box(winGame->winScore, 0, 0);
@@ -34,68 +36,54 @@ WinCurses *createFrontend() {
 }
 
 void printFrontend(GameInfo_t *game, WinCurses *winGame) {
-  printField(game->field, winGame->winBoard);
-  printManagement(winGame->winInput);
-  printScore(game, winGame->winScore);
-  clearNext(winGame->winBrick, FIGURE_SIZE, FIGURE_SIZE);
-  printNext(game->next, winGame->winBrick);
-  if (game->pause) printPauseDashboard(winGame->winBoard);
+  if (winGame) {
+    if (winGame->currentScreen == SCREEN_START) {
+      printStartDashboard(winGame->winBoard);
+    } else if (game && winGame->currentScreen == SCREEN_PAUSE && game->pause) {
+      printPauseDashboard(winGame->winBoard);
+    } else if (winGame->currentScreen == SCREEN_GAME_OVER) {
+      gameOverDashboard(winGame->winBoard);
+      clearNext(winGame->winBrick);
+      printManagement(winGame->winInput);
 
-  wrefresh(winGame->winBoard);
-  wrefresh(winGame->winInput);
-  wrefresh(winGame->winBrick);
-  wrefresh(winGame->winScore);
+    } else if (game && game->field)
+      printField(game->field, winGame->winBoard);
+
+    if (game) {
+      printManagement(winGame->winInput);
+      printScore(game, winGame->winScore);
+      if (game->next) {
+        printNext(game->next, winGame->winBrick);
+      }
+    }
+    wrefresh(winGame->winBoard);
+    wrefresh(winGame->winInput);
+    wrefresh(winGame->winBrick);
+    wrefresh(winGame->winScore);
+  }
 }
 
 void printField(int **field, WINDOW *win) {
-  for (int i = 0; i < FIELD_HEIGHT; i++) {
-    for (int j = 0; j < FIELD_WIDTH; j++) {
-      if (field[i][j] == 0) {
-        wbkgdset(win, COLOR_PAIR(1));
-        mvwprintw(win, i + 1, 2 * j + 1, "%c", ' ');
-        mvwprintw(win, i + 1, 2 * j + 2, "%c", ' ');
-      } else {
-        wbkgdset(win, COLOR_PAIR(field[i][j] + 2));
-        mvwprintw(win, i + 1, 2 * j + 1, "%c", ' ');
-        mvwprintw(win, i + 1, 2 * j + 2, "%c", ' ');
+  if (field && win) {
+    for (int i = 0; i < FIELD_HEIGHT; i++) {
+      for (int j = 0; j < FIELD_WIDTH; j++) {
+        if (field[i][j] == 0) {
+          wbkgdset(win, COLOR_PAIR(1));
+          mvwprintw(win, i + 1, 2 * j + 1, "%c", ' ');
+          mvwprintw(win, i + 1, 2 * j + 2, "%c", ' ');
+        } else {
+          wbkgdset(win, COLOR_PAIR(field[i][j] + 2));
+          mvwprintw(win, i + 1, 2 * j + 1, "%c", ' ');
+          mvwprintw(win, i + 1, 2 * j + 2, "%c", ' ');
+        }
       }
     }
   }
-}
-
-void printNext(int **next, WINDOW *win) {
-  for (int i = 0; i < FIGURE_SIZE; i++) {
-    for (int j = 0; j < FIGURE_SIZE; j++) {
-      if (next[i][j] != 0) {
-        wbkgdset(win, COLOR_PAIR(next[i][j] + 2));
-        mvwprintw(win, i + 1 + 1, 2 * j + 1 + 1, "%c", ' ');
-        mvwprintw(win, i + 1 + 1, 2 * j + 2 + 1, "%c", ' ');
-      }
-    }
-  }
-}
-
-void clearNext(WINDOW *win, int y_pos, int x_pos) {
-  for (int i = 0; i <= y_pos; i++) {
-    for (int j = 0; j <= x_pos; j++) {
-      wbkgdset(win, COLOR_PAIR(1));
-      mvwprintw(win, i + 1 + 1, 2 * j + 2 + 1, "%c", ' ');
-      mvwprintw(win, i + 1 + 1, 2 * j + 1 + 1, "%c", ' ');
-    }
-  }
-}
-
-void printManagement(WINDOW *win) {
-  mvwprintw(win, 3, 3, "%s", "Quit(Q)");
-  mvwprintw(win, 1, 3, "%s", "Pause(SPACE)");
-  mvwprintw(win, 1, 20, "%s", "UP - Rotate");
-  mvwprintw(win, 3, 20, "%s", "DOWN - Drop");
-  mvwprintw(win, 5, 20, "%s", "<- -> - move");
-  mvwprintw(win, 5, 3, "%s", "GIT GUD");
 }
 
 void printStartDashboard(WINDOW *win) {
-  mvwprintw(win, FIELD_HEIGHT / 2 - 1, (FIELD_WIDTH - 6), "PRESS ANY KEY");
+  wbkgdset(win, COLOR_PAIR(0));
+  mvwprintw(win, FIELD_HEIGHT / 2 - 1, (FIELD_WIDTH - 5), "PRESS SPACE");
   mvwprintw(win, FIELD_HEIGHT / 2, (FIELD_WIDTH - 4), "TO START!");
   wrefresh(win);
 }
@@ -106,15 +94,92 @@ void printPauseDashboard(WINDOW *win) {
   wrefresh(win);
 }
 
+void gameOverDashboard(WINDOW *win) {
+  wbkgdset(win, COLOR_PAIR(0));
+
+  for (int i = 1; i < BOARD_HEIGHT - 1; i++) {
+    for (int j = 1; j < BOARD_WIDTH - 1; j++) {
+      mvwprintw(win, i, j, " ");
+    }
+  }
+
+  mvwprintw(win, F_HEIGHT / 2, F_WIDTH - 4, "GAME OVER!");
+
+  wrefresh(win);
+}
+
+void printNext(int **next, WINDOW *win) {
+  if (next && win) {
+    clearNext(win);
+
+    int minRow = FIGURE_SIZE, maxRow = 0;
+    int minCol = FIGURE_SIZE, maxCol = 0;
+    bool hasBlocks = false;
+
+    for (int i = 0; i < FIGURE_SIZE; i++) {
+      for (int j = 0; j < FIGURE_SIZE; j++) {
+        if (next[i][j] != 0) {
+          hasBlocks = true;
+          if (i < minRow) minRow = i;
+          if (i > maxRow) maxRow = i;
+          if (j < minCol) minCol = j;
+          if (j > maxCol) maxCol = j;
+        }
+      }
+    }
+
+    if (hasBlocks) {
+      int figureHeight = maxRow - minRow + 1;
+      int figureWidth = maxCol - minCol + 1;
+
+      int centerY = NEXT_HEIGHT / 2;
+      int centerX = NEXT_WIDTH / 2;
+
+      int startY = centerY - figureHeight / 2;
+      int startX = centerX - figureWidth;
+
+      for (int i = minRow; i <= maxRow; i++) {
+        for (int j = minCol; j <= maxCol; j++) {
+          if (next[i][j] != 0) {
+            wbkgdset(win, COLOR_PAIR(next[i][j] + 2));
+            mvwprintw(win, startY + (i - minRow), startX + (j - minCol) * 2,
+                      "%c", ' ');
+            mvwprintw(win, startY + (i - minRow), startX + (j - minCol) * 2 + 1,
+                      "%c", ' ');
+          }
+        }
+      }
+    }
+  }
+}
+
+void printManagement(WINDOW *win) {
+  mvwprintw(win, 3, 3, "%s", "Quit(Q)");
+  mvwprintw(win, 1, 3, "%s", "Pause(P)");
+  mvwprintw(win, 1, 20, "%s", "(R) - Rotate");
+  mvwprintw(win, 3, 20, "%s", "DOWN - Drop");
+  mvwprintw(win, 5, 20, "%s", "<- -> - move");
+  mvwprintw(win, 5, 3, "%s", "by onionyas");
+}
+
 void printScore(GameInfo_t *game, WINDOW *win) {
-  mvwprintw(win, 1, 2, "%s", "level:");
+  mvwprintw(win, 1, 2, "%s", "LEVEL:");
   mvwprintw(win, 3, 2, "%d", game->level);
 
-  mvwprintw(win, 5, 2, "%s", "score:");
+  mvwprintw(win, 5, 2, "%s", "SCORE:");
   mvwprintw(win, 7, 2, "%d  ", game->score);
 
-  mvwprintw(win, 9, 2, "%s", "record:");
+  mvwprintw(win, 9, 2, "%s", "RECORD:");
   mvwprintw(win, 11, 2, "%d", game->high_score);
+}
+
+void clearNext(WINDOW *win) {
+  for (int i = 1; i < NEXT_HEIGHT - 1; i++) {
+    for (int j = 1; j < NEXT_WIDTH - 1; j++) {
+      wbkgdset(win, COLOR_PAIR(1));
+      mvwprintw(win, i, j, "%c", ' ');
+    }
+  }
 }
 
 void initColors() {
@@ -130,10 +195,4 @@ void initColors() {
 void freeCurses(WinCurses *win) {
   if (win) free(win);
   endwin();
-}
-
-void gameOverDashboard(WINDOW *win) {
-  wbkgdset(win, COLOR_PAIR(0));
-  mvwprintw(win, F_HEIGHT / 2 - 1, (F_WIDTH - 2), "GAME OVER!");
-  wrefresh(win);
 }
