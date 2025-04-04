@@ -2,25 +2,27 @@
 
 void transitionToState() {
   GameContext_t *context = getCurrentContext();
-  switch (context->currentState) {
-    case GameState_Start:
-      stateOfStart();
-      break;
-    case GameState_Spawn:
-      stateOfSpawn();
-      break;
-    case GameState_Moving:
-      stateOfMoving();
-      break;
-    case GameState_Shifting:
-      stateOfShifting();
-      break;
-    case GameState_Attaching:
-      stateOfAttaching();
-      break;
-    case GameState_GameOver:
-      stateOfGameOver();
-      break;
+  if (context) {
+    switch (context->currentState) {
+      case GameState_Start:
+        stateOfStart();
+        break;
+      case GameState_Spawn:
+        stateOfSpawn();
+        break;
+      case GameState_Moving:
+        stateOfMoving();
+        break;
+      case GameState_Shifting:
+        stateOfShifting();
+        break;
+      case GameState_Attaching:
+        stateOfAttaching();
+        break;
+      case GameState_GameOver:
+        stateOfGameOver();
+        break;
+    }
   }
 }
 
@@ -61,7 +63,7 @@ void stateOfMoving() {
 void stateOfShifting() {
   GameContext_t *context = getCurrentContext();
 
-  if (context) {
+  if (context && context->currentFigure && context->gameStateInfo.field) {
     processShift();
     clearCurrentFigureFromField();
     addCurrentFigureToField();
@@ -73,10 +75,10 @@ void stateOfAttaching() {
   GameContext_t *context = getCurrentContext();
 
   if (context) {
-    bool outOfField = attachFigureToField();
+    attachFigureToField();
     int lines = clearLines();
     countScore(lines);
-    if (outOfField)
+    if (processGameOver())
       context->currentState = GameState_GameOver;
     else
       context->currentState = GameState_Spawn;
@@ -89,4 +91,47 @@ void stateOfGameOver() {
   if (context) {
     freeGame();
   }
+}
+
+void processShift() {
+  GameContext_t *context = getCurrentContext();
+  if (context && context->currentFigure && context->gameStateInfo.field) {
+    if (context->userInput == Left) {
+      moveFigureLeft();
+    } else if (context->userInput == Right) {
+      moveFigureRight();
+    } else if (context->userInput == Down) {
+      moveFigureDown();
+    } else if (context->userInput == Action) {
+      if (!isSquareFigure()) rotationFigure();
+    }
+    context->shiftRequested = false;
+  }
+}
+
+bool processAttaching() {
+  GameContext_t *context = getCurrentContext();
+  bool willAttach = false;
+  if (context) {
+    int originalY = context->figureY;
+
+    context->figureY++;
+    willAttach = collision();
+
+    context->figureY = originalY;
+  }
+  return willAttach;
+}
+
+bool processGameOver() {
+  GameContext_t *context = getCurrentContext();
+  bool willGameOver = false;
+  if (context && context->gameStateInfo.field) {
+    int **field = context->gameStateInfo.field;
+
+    for (int x = 0; x < FIELD_WIDTH && !willGameOver; x++) {
+      if (field[0][x] != 0) willGameOver = true;
+    }
+  }
+  return willGameOver;
 }

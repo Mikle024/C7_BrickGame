@@ -1,22 +1,9 @@
 #ifndef S21_FILE_UTILS_H
 #define S21_FILE_UTILS_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <stdbool.h>
 
-/**
- * @brief Инициализирует высокий счет из файла.
- *
- * @return int Загруженное значение высокого счета или 0, если ошибка.
- */
 int initHighScore();
+bool updateScore(const int score);
 
-/**
- * @brief Обновляет высокий счет в файле.
- *
- * @param score Новое значение высокого счета.
- */
-void updateScore(int score);
-
-#endif 
+#endif

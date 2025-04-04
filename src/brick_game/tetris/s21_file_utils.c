@@ -1,15 +1,16 @@
 #include "inc/s21_file_utils.h"
 
-/**
- * @brief Инициализирует высокий счет из файла.
- *
- * @return int Загруженное значение высокого счета или 0, если ошибка.
- */
-int initHighScore() {
-  FILE *fp = fopen("highScore.txt", "r");
-  int highScore = 0;
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-  if (fp) {
+#include "inc/s21_defines.h"
+
+int initHighScore() {
+  int highScore = 0;
+  FILE *fp = fopen(HIGH_SCORE_FILE, "r");
+
+  if (fp != NULL) {
     char buffer[100];
     if (fgets(buffer, sizeof(buffer), fp) != NULL) {
       buffer[strcspn(buffer, "\n")] = '\0';
@@ -17,27 +18,24 @@ int initHighScore() {
       char *endPtr;
       long score = strtol(buffer, &endPtr, 10);
 
-      if (endPtr == buffer || *endPtr != '\0' || score <= 0) {
-        highScore = 0;
-      } else {
+      if (endPtr != buffer && *endPtr == '\0' && score > 0) {
         highScore = (int)score;
       }
     }
+
     fclose(fp);
   }
 
   return highScore;
 }
 
-/**
- * @brief Обновляет высокий счет в файле.
- *
- * @param score Новое значение высокого счета.
- */
-void updateScore(int score) {
-  FILE *fp = fopen("highScore.txt", "w");
+bool updateScore(const int score) {
+  bool result = false;
+  FILE *fp = fopen(HIGH_SCORE_FILE, "w");
+
   if (fp) {
-    fprintf(fp, "%d", score);
+    result = fprintf(fp, "%d\n", score);
     fclose(fp);
   }
-} 
+  return (result > 0);
+}

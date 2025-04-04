@@ -7,7 +7,7 @@ GameInfo_t updateCurrentState() {
   return currentGameInfo;
 }
 
-void userInput(UserAction_t action, bool hold) {
+void userInput(const UserAction_t action, const bool hold) {
   GameContext_t *context = getCurrentContext();
 
   switch (action) {
@@ -40,12 +40,12 @@ void userInput(UserAction_t action, bool hold) {
       }
       break;
     case Pause:
-      if (!hold) context->gameStateInfo.pause = !context->gameStateInfo.pause;
+      if (!hold && context->currentState == GameState_Moving)
+        context->gameStateInfo.pause = !context->gameStateInfo.pause;
       break;
     case Terminate:
       if (!hold) {
-        context->shiftRequested = true;
-        context->userInput = Terminate;
+        freeGame();
       }
       break;
     default:

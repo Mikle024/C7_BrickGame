@@ -5,20 +5,20 @@
 #include <stdlib.h>
 
 /**
- * @brief Создает двумерную матрицу целых чисел заданного размера.
+ * @brief Creates a two-dimensional matrix of integers of the specified size.
  *
- * @param rows Количество строк матрицы.
- * @param column Количество столбцов матрицы.
- * @return int** Указатель на созданную матрицу или NULL в случае ошибки.
+ * @param rows Number of rows in the matrix.
+ * @param column Number of columns in the matrix.
+ * @return int** Pointer to the created matrix or NULL in case of error.
  */
-int **createMatrix(int rows, int column);
+int **createMatrix(const int rows, const int column);
 
 /**
- * @brief Освобождает память, выделенную под двумерную матрицу.
+ * @brief Frees memory allocated for a two-dimensional matrix.
  *
- * @param matrix Указатель на матрицу для освобождения.
- * @param rows Количество строк в матрице.
+ * @param matrix Pointer to the matrix to be freed.
+ * @param rows Number of rows in the matrix.
  */
-void freeMatrix(int **matrix, int rows);
+void freeMatrix(int **matrix, const int rows);
 
-#endif 
+#endif
