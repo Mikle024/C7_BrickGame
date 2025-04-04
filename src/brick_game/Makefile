@@ -7,7 +7,10 @@ MAIN_TEST	= tests/tests_main.c
 INC_TEST	= tests/s21_tests.h
 OBJ_TEST	= object_test/test_s21_*.o
 OUT_TEST	= tetris_test
-REPORT_FILE	= report/index.html
+REPORT_DIR  = report
+REPORT_FILE	= $(REPORT_DIR)/index.html
+
+FILE_SCORE = highScore.txt
 
 UNAME_S := $(shell uname -s)
 
@@ -38,21 +41,23 @@ all: s21_tetris.a
 s21_tetris.a: build.o
 	$(LIB_FLAGS) $(LIBRARY) $(OBJ)
 
-test: test_file
-	./$(OUT_TEST)
+test: test_build
+	./$(OUT_TEST) && rm $(FILE_SCORE)
+
+test_with_report: test
 	$(MAKE) gcov_report
-	-rm -rf *.gc* *.info $(OUT_TEST) $(OBJ_TEST) $(OBJ) $(LIBRARY)
+	-rm -rf *.gcda *.gcno $(OUT_TEST) $(OBJ_TEST) $(OBJ) $(LIBRARY) $(FILE_SCORE)
 	$(OPEN_REPORT) $(REPORT_FILE)
 
-leaks_test: test_file
+leaks_test: test_build
 	leaks -atExit -- ./$(OUT_TEST)
-	-rm -rf *.gc* *.info $(OUT_TEST) $(OBJ_TEST) $(OBJ) $(LIBRARY)
+	-rm -rf *.gcda *.gcno *.info $(OUT_TEST) $(OBJ_TEST) $(OBJ) $(LIBRARY) $(FILE_SCORE)
 
-valgrind_test: test_file
+valgrind_test: test_build
 	valgrind --leak-check=full ./$(OUT_TEST)
-	-rm -rf *.gc* *.info $(OUT_TEST) $(OBJ_TEST) $(OBJ) $(LIBRARY)
+	-rm -rf *.gcda *.gcno *.info $(OUT_TEST) $(OBJ_TEST) $(OBJ) $(LIBRARY) $(FILE_SCORE)
 
-test_file: s21_tetris.a_for_test build_test.o
+test_build: clean s21_tetris.a_for_test build_test.o
 	$(CC) $(L_FLAGS) $(COVER_FLAG) $(OBJ_TEST) $(MAIN_TEST) -L. $(LIBRARY) $(OS_SPECIFIC_FLAGS) -o $(OUT_TEST)
 
 s21_tetris.a_for_test: build_object_for_test.o
@@ -66,18 +71,29 @@ build_object_for_test.o:
 	mkdir -p object && $(CC) $(CFLAGS) $(COVER_FLAG) -c $(FUNC_FILES) && mv s21_*.o object/
 
 build_test.o:
-	mkdir -p object_test && $(CC) $(CFLAGS) -c $(FUNC_TEST) && mv test_s21_*.o object_test/
+	mkdir -p object_test && \
+	$(CC) $(CFLAGS) -c $(FUNC_TEST) && mv test_s21_*.o object_test/
 
 gcov_report:
-	lcov -t "test" -o tetris.info -c -d . --rc $(OS_SPECIFIC_GCOV_REPORT)
-	genhtml -o report tetris.info --rc $(OS_SPECIFIC_GCOV_REPORT_HTML)
+	mkdir -p $(REPORT_DIR)
+	lcov -t "tetris" -o tetris.info -c -d . \
+		--exclude "*/tests/*" \
+		--rc $(OS_SPECIFIC_GCOV_REPORT) \
+		--rc lcov_function_coverage=1 \
+		--rc lcov_branch_coverage=1
+	genhtml -o $(REPORT_DIR) tetris.info \
+		--rc $(OS_SPECIFIC_GCOV_REPORT_HTML) \
+		--function-coverage \
+		--branch-coverage \
+		--legend \
+		--demangle-cpp
 
 clang_format:
 	cp ../../materials/linters/.clang-format .clang-format
-	clang-format -i $(FUNC_FILES) $(INC) $(FUNC_TEST) $(FUNC_TEST) $(MAIN_TEST) $(INC_TEST)
-	rm .clang-format
+	clang-format -i $(FUNC_FILES) $(INC) $(FUNC_TEST) $(MAIN_TEST) $(INC_TEST) $(UTILS_TEST)
+	rm -f .clang-format
 
 rebuild: clean all
 
 clean:
-	rm -rf object object_test $(OUT_TEST) $(LIBRARY) *.gc* report/ *.info
+	rm -rf object/ object_test/ $(OUT_TEST) $(LIBRARY) *.gcda *.gcno *.o $(REPORT_DIR)/ *.info rm $(FILE_SCORE)
