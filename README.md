@@ -1,3 +1,5 @@
+[![Build status](https://ci.appveyor.com/api/projects/status/xt3gfatu93prib80?svg=true)](https://ci.appveyor.com/project/Mikle024/c7-brickgame)
+
 # 🕹️ Brick Game
 
 ![Версия](https://img.shields.io/badge/Версия-1.2.0(godMode)-violet)
