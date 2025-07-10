@@ -6,7 +6,7 @@ branches:
 
 install:
   - sudo apt-get update
-  - sudo apt-get install -y gcc clang-format cppcheck valgrind make lcov
+  - sudo apt-get install -y gcc clang-format cppcheck valgrind make lcov check
 
 build: off
 
