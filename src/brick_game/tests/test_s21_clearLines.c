@@ -10,16 +10,16 @@ START_TEST(test_clearLines_one_line) {
   }
   context->gameStateInfo.field = createMatrix(FIELD_HEIGHT, FIELD_WIDTH);
 
-  int fullLine = 5;
+  int const fullLineBlocks = 5;
   for (int j = 0; j < FIELD_WIDTH; j++) {
-    context->gameStateInfo.field[fullLine][j] = 1;
+    context->gameStateInfo.field[fullLineBlocks][j] = 1;
   }
 
   int clearedLines = clearLines();
   ck_assert_int_eq(clearedLines, 1);
 
   for (int j = 0; j < FIELD_WIDTH; j++) {
-    ck_assert_int_eq(context->gameStateInfo.field[fullLine][j], 0);
+    ck_assert_int_eq(context->gameStateInfo.field[fullLineBlocks][j], 0);
   }
 
   cleanupTest();

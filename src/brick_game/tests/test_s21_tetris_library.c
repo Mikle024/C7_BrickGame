@@ -131,7 +131,7 @@ START_TEST(test_updateCurrentState) {
 
     context->shiftRequested = true;
     context->userInput = Left;
-    info = updateCurrentState();
+    updateCurrentState();
 
     ck_assert_int_eq(context->currentState, GameState_Shifting);
   }

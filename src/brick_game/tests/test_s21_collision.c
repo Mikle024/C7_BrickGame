@@ -101,6 +101,7 @@ START_TEST(test_collision_with_blocks) {
 
   context->figureY = 3;
   context->gameStateInfo.field[7][4] = 2;
+  ck_assert_int_eq(collision(), 0);
 
   context->figureY = 6;
   ck_assert_int_eq(collision(), 1);

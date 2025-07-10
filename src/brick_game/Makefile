@@ -54,8 +54,12 @@ leaks_test: test_build
 	-rm -rf *.gcda *.gcno *.info $(OUT_TEST) $(OBJ_TEST) $(OBJ) $(LIBRARY) $(FILE_SCORE)
 
 valgrind_test: test_build
-	valgrind --leak-check=full ./$(OUT_TEST)
+	valgrind valgrind --tool=memcheck --leak-check=full --track-origins=yes ./$(OUT_TEST)
 	-rm -rf *.gcda *.gcno *.info $(OUT_TEST) $(OBJ_TEST) $(OBJ) $(LIBRARY) $(FILE_SCORE)
+
+cpp_check:
+	cppcheck --enable=all --suppress=missingIncludeSystem \
+	$(SRC_FILES) $(INC) $(SRC_TEST) $(MAIN_TEST) $(INC_TEST)
 
 test_build: clean s21_tetris.a_for_test build_test.o
 	$(CC) $(L_FLAGS) $(COVER_FLAG) $(OBJ_TEST) $(MAIN_TEST) -L. $(LIBRARY) $(OS_SPECIFIC_FLAGS) -o $(OUT_TEST)
@@ -65,10 +69,12 @@ s21_tetris.a_for_test: build_object_for_test.o
 	rm -fr $(OBJ)
 
 build.o:
-	mkdir -p object && $(CC) $(CFLAGS) $(SRC_FILES) && mv s21_*.o object/
+	mkdir -p object && \
+	$(CC) $(CFLAGS) $(SRC_FILES) && mv s21_*.o object/
 
 build_object_for_test.o:
-	mkdir -p object && $(CC) $(CFLAGS) $(COVER_FLAG) $(SRC_FILES) && mv s21_*.o object/
+	mkdir -p object && \
+	$(CC) $(CFLAGS) $(COVER_FLAG) $(SRC_FILES) && mv s21_*.o object/
 
 build_test.o:
 	mkdir -p object_test && \

@@ -179,7 +179,7 @@ void setupGameWithCustomValues(int fieldPattern[FIELD_HEIGHT][FIELD_WIDTH],
   context->oldFigureY = posY;
 }
 
-int collisionWithContext(GameContext_t *context) {
+int collisionWithContext(GameContext_t const *context) {
   int result = 0;
   if (!context || !context->currentFigure || !context->gameStateInfo.field) {
     result = 1;

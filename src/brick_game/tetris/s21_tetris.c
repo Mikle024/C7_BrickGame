@@ -1,7 +1,7 @@
 #include "inc/s21_tetris.h"
 
 GameInfo_t updateCurrentState() {
-  GameContext_t *gameContext = getCurrentContext();
+  GameContext_t const *gameContext = getCurrentContext();
   transitionToState();
   GameInfo_t currentGameInfo = gameContext->gameStateInfo;
   return currentGameInfo;

@@ -164,7 +164,7 @@ void clearCurrentFigureFromField() {
 }
 
 void attachFigureToField() {
-  GameContext_t *context = getCurrentContext();
+  GameContext_t const *context = getCurrentContext();
   if (context && context->currentFigure && context->gameStateInfo.field) {
     addCurrentFigureToField();
 
@@ -186,7 +186,7 @@ void attachFigureToField() {
 }
 
 bool isSquareFigure() {
-  GameContext_t *context = getCurrentContext();
+  GameContext_t const *context = getCurrentContext();
   bool result = false;
   if (context && context->currentFigure) {
     for (int i = 0; i < FIGURE_SIZE; i++) {
@@ -199,7 +199,7 @@ bool isSquareFigure() {
 }
 
 bool collision() {
-  GameContext_t *context = getCurrentContext();
+  GameContext_t const *context = getCurrentContext();
   bool hasCollision = false;
   if (context && context->currentFigure && context->gameStateInfo.field) {
     int **currentFigure = context->currentFigure;
@@ -220,7 +220,7 @@ bool collision() {
               context->gameStateInfo.field[boardY][boardX] != 0) {
             int fieldValue = context->gameStateInfo.field[boardY][boardX];
 
-            if (fieldValue != 0 && fieldValue != currentFigure[i][j]) {
+            if (fieldValue != currentFigure[i][j]) {
               hasCollision = true;
             }
           }
@@ -294,7 +294,7 @@ int clearLines() {
 }
 
 bool fullLine(const int numLine) {
-  GameContext_t *context = getCurrentContext();
+  GameContext_t const *context = getCurrentContext();
   bool isFullLine = true;
   if (context) {
     for (int i = 0; i < FIELD_WIDTH && isFullLine; i++) {

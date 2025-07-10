@@ -1,7 +1,7 @@
 #include "inc/s21_fsm.h"
 
 void transitionToState() {
-  GameContext_t *context = getCurrentContext();
+  GameContext_t const *context = getCurrentContext();
   if (context) {
     switch (context->currentState) {
       case GameState_Start:
@@ -86,7 +86,7 @@ void stateOfAttaching() {
 }
 
 void stateOfGameOver() {
-  GameContext_t *context = getCurrentContext();
+  GameContext_t const *context = getCurrentContext();
 
   if (context) {
     freeGame();
