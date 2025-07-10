@@ -104,9 +104,9 @@ void processShift() {
       moveFigureDown();
     } else if (context->userInput == Action) {
       if (!isSquareFigure()) rotationFigure();
-    } else if (context->userInput == Up && context->goodMode) {
-      moveFigureUp();
-    }
+    } else if (context->userInput == Up && context->goodMode) {  // god mode
+      moveFigureUp();                                            // god mode
+    }  // god mode
     context->shiftRequested = false;
   }
 }

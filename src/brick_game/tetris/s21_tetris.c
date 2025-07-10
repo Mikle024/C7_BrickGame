@@ -33,17 +33,17 @@ void userInput(const UserAction_t action, const bool hold) {
         context->userInput = Down;
       }
       break;
-    case Up:
-      if (context->currentState == GameState_Moving) {
-        context->shiftRequested = true;
-        context->userInput = Up;
-      }
-      break;
-    case Good_Mode:
-      if (context->currentState == GameState_Moving) {
-        context->goodMode = !context->goodMode;
-      }
-      break;
+    case Up:                                            // god mode
+      if (context->currentState == GameState_Moving) {  //  god mode
+        context->shiftRequested = true;                 //  god mode
+        context->userInput = Up;                        //  god mode
+      }  //  god mode
+      break;                                            //  god mode
+    case Good_Mode:                                     //  god mode
+      if (context->currentState == GameState_Moving) {  //  god mode
+        context->goodMode = !context->goodMode;         //  god mode
+      }  //  god mode
+      break;  //  god mode
     case Action:
       if (!hold && context->currentState == GameState_Moving) {
         context->shiftRequested = true;

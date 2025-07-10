@@ -10,10 +10,12 @@ typedef enum {
   Terminate, /**< Terminate the game. */
   Left,      /**< Move the figure to the left. */
   Right,     /**< Move the figure to the right. */
-  Up,        /**< Move the figure to the up. */
-  Down,      /**< Move the figure down. */
-  Action,    /**< Perform an action. */
-  Good_Mode  /**< Enter good mode. */
+  Up,
+  /**< Move the figure to the up. */  // without god mode "Not used in this
+                                      // game."
+  Down,                               /**< Move the figure down. */
+  Action,                             /**< Perform an action. */
+  Good_Mode /**< Enter good mode. */  // god mode
 } UserAction_t;
 
 /**
@@ -47,7 +49,7 @@ typedef struct {
   int oldFigureX, oldFigureY;
   bool shiftRequested;
   long long lastTime;
-  bool goodMode;
+  bool goodMode;  // god mode
 } GameContext_t;
 
 #endif
