@@ -104,6 +104,8 @@ void processShift() {
       moveFigureDown();
     } else if (context->userInput == Action) {
       if (!isSquareFigure()) rotationFigure();
+    } else if (context->userInput == Up && context->goodMode) {
+      moveFigureUp();
     }
     context->shiftRequested = false;
   }

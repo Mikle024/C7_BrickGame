@@ -1,21 +1,21 @@
-LIBRARY		= s21_tetris.a
-FUNC_FILES	= tetris/s21_*.c
-INC 		= tetris/inc/*.h
-OBJ			= object/s21_*.o
-FUNC_TEST	= tests/test_s21_*.c
-MAIN_TEST	= tests/tests_main.c
-INC_TEST	= tests/s21_tests.h
-OBJ_TEST	= object_test/test_s21_*.o
-OUT_TEST	= tetris_test
-REPORT_DIR  = report
-REPORT_FILE	= $(REPORT_DIR)/index.html
+LIBRARY		:= s21_tetris.a
+SRC_FILES	:= tetris/s21_*.c
+INC			:= tetris/inc/*.h
+OBJ			:= object/s21_*.o
+SRC_TEST	:= tests/test_s21_*.c
+MAIN_TEST	:= tests/tests_main.c
+INC_TEST	:= tests/s21_tests.h
+OBJ_TEST	:= object_test/test_s21_*.o
+OUT_TEST	:= tetris_test
+REPORT_DIR	:= report
+REPORT_FILE	:= $(REPORT_DIR)/index.html
 
-FILE_SCORE = highScore.txt
+FILE_SCORE	:= highScore.txt
 
 UNAME_S := $(shell uname -s)
 
 CC			= gcc
-CFLAGS		= -c -std=c11
+CFLAGS		= -c -std=c11 -Wall -Werror -Wextra
 L_FLAGS		= -std=c11 -Wall -Werror -Wextra
 COVER_FLAG  = --coverage
 LIB_FLAGS 	= ar rcs
@@ -31,9 +31,9 @@ else ifeq ($(UNAME_S), Darwin)
 endif
 
 ifeq ($(shell grep -i microsoft /proc/version),)
-	OPEN_REPORT:= open
+	OPEN_REPORT	:= open
 else
-    OPEN_REPORT:= wslview
+	OPEN_REPORT	:= wslview
 endif
 
 all: s21_tetris.a
@@ -65,14 +65,14 @@ s21_tetris.a_for_test: build_object_for_test.o
 	rm -fr $(OBJ)
 
 build.o:
-	mkdir -p object && $(CC) $(CFLAGS) -c $(FUNC_FILES) && mv s21_*.o object/
+	mkdir -p object && $(CC) $(CFLAGS) $(SRC_FILES) && mv s21_*.o object/
 
 build_object_for_test.o:
-	mkdir -p object && $(CC) $(CFLAGS) $(COVER_FLAG) -c $(FUNC_FILES) && mv s21_*.o object/
+	mkdir -p object && $(CC) $(CFLAGS) $(COVER_FLAG) $(SRC_FILES) && mv s21_*.o object/
 
 build_test.o:
 	mkdir -p object_test && \
-	$(CC) $(CFLAGS) -c $(FUNC_TEST) && mv test_s21_*.o object_test/
+	$(CC) $(CFLAGS) -c $(SRC_TEST) && mv test_s21_*.o object_test/
 
 gcov_report:
 	mkdir -p $(REPORT_DIR)
@@ -87,11 +87,25 @@ gcov_report:
 		--branch-coverage \
 		--legend \
 		--demangle-cpp
+	@rm -rf *.gcda *.gcno $(OUT_TEST) $(OBJ_TEST) $(OBJ) $(LIBRARY) $(FILE_SCORE)
+	@/bin/bash -c '\
+		echo ""; \
+		read -p "Open the coverage report in a browser? [Y/n] " answer; \
+		case $$answer in \
+			[Yy]* ) echo "Opening report..."; $(OPEN_REPORT) $(REPORT_FILE);; \
+			* ) echo "Report saved. You can open it manually at: $(REPORT_FILE)";; \
+		esac \
+	'
+
+style_check:
+	cp ../../materials/linters/.clang-format .clang-format
+	clang-format -n $(SRC_FILES) $(INC) $(SRC_TEST) $(MAIN_TEST) $(INC_TEST)
+	@rm -f .clang-format > /dev/null 2>&1
 
 clang_format:
 	cp ../../materials/linters/.clang-format .clang-format
-	clang-format -i $(FUNC_FILES) $(INC) $(FUNC_TEST) $(MAIN_TEST) $(INC_TEST) $(UTILS_TEST)
-	rm -f .clang-format
+	clang-format -i $(SRC_FILES) $(INC) $(SRC_TEST) $(MAIN_TEST) $(INC_TEST)
+	@rm -f .clang-format > /dev/null 2>&1
 
 rebuild: clean all
 

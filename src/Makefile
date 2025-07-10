@@ -1,7 +1,7 @@
-OUT_GAME	= s21_BrickGame
-BACKEND		= s21_tetris.a
-MAIN		= s21_main.c
-FRONT 		= gui/cli/s21_frontend.c
+OUT_GAME	:= s21_BrickGame
+BACKEND		:= s21_tetris.a
+MAIN		:= s21_main.c
+FRONT		:= gui/cli/s21_frontend.c
 
 CC			= gcc
 CFLAGS		= -c -std=c11
@@ -21,6 +21,14 @@ uninstall:
 
 test:
 	$(MAKE) -C brick_game test
+	@/bin/bash -c '\
+		echo ""; \
+		read -p "Do you want to generate a gcov report? [Y/n] " answer; \
+		case $$answer in \
+			[Yy]* ) echo "Generating gcov report..."; $(MAKE) gcov_report;; \
+			* ) echo "Skipping gcov report.";; \
+		esac \
+	'
 
 dvi:
 	@bash scripts/generate_dvi.sh
@@ -37,11 +45,23 @@ gcov_report:
 
 rebuild: clean all
 
+style_check:
+	@echo "┏=========================================┓"
+	@echo "┃  Checking your code for Google Style    ┃"
+	@echo "┗=========================================┛"
+	@$(MAKE) -C brick_game style_check
+	cp ../materials/linters/.clang-format .clang-format
+	clang-format -n *.c *.h $(FRONT) gui/cli/inc/*.h
+	@rm -f .clang-format > /dev/null 2>&1
+
 clang_format:
-	$(MAKE) -C brick_game clang_format
+	@echo "┏=========================================┓"
+	@echo "┃  Formatting your code for Google Style  ┃"
+	@echo "┗=========================================┛"
+	@$(MAKE) -C brick_game clang_format
 	cp ../materials/linters/.clang-format .clang-format
 	clang-format -i *.c *.h $(FRONT) gui/cli/inc/*.h
-	rm .clang-format
+	@rm -f .clang-format > /dev/null 2>&1
 
 clean:
 	$(MAKE) -C brick_game clean

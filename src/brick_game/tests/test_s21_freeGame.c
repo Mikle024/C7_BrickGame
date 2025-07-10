@@ -6,10 +6,6 @@ START_TEST(test_freeGame_valid_context) {
   GameContext_t *context = getCurrentContext();
   ck_assert_ptr_nonnull(context);
 
-  int **savedCurrentFigure = context->currentFigure;
-  int **savedField = context->gameStateInfo.field;
-  int **savedNext = context->gameStateInfo.next;
-
   freeGame();
 
   ck_assert_ptr_null(context->currentFigure);

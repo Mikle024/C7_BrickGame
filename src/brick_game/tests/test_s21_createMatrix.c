@@ -1,8 +1,8 @@
 #include "s21_tests.h"
 
 START_TEST(test_createMatrix_valid) {
-  int rows = 3;
-  int columns = 4;
+  int const rows = 3;
+  int const columns = 4;
 
   int **matrix = createMatrix(rows, columns);
 

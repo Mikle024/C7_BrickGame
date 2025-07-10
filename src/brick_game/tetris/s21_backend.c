@@ -53,6 +53,7 @@ void initializeGame(GameContext_t *context, bool *checkInit) {
   context->oldFigureY = START_COORD_F_Y;
   context->lastTime = 0;
   context->shiftRequested = false;
+  context->goodMode = false;
 
   *checkInit = true;
 }
@@ -211,7 +212,8 @@ bool collision() {
 
           if (boardY >= FIELD_HEIGHT) hasCollision = true;
 
-          if ((boardX < 0 || boardX >= FIELD_WIDTH)) hasCollision = true;
+          if ((boardX < 0 || boardX >= FIELD_WIDTH) && !context->goodMode)
+            hasCollision = true;
 
           if (pixelInField(boardX, boardY) &&
               context->gameStateInfo.field[boardY][boardX] != 0) {

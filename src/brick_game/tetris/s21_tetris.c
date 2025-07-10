@@ -12,7 +12,7 @@ void userInput(const UserAction_t action, const bool hold) {
 
   switch (action) {
     case Start:
-      if (!hold && context->currentState == GameState_Start)
+      if (context->currentState == GameState_Start)
         context->gameStateInfo.pause = 0;
       break;
     case Left:
@@ -31,6 +31,17 @@ void userInput(const UserAction_t action, const bool hold) {
       if (context->currentState == GameState_Moving) {
         context->shiftRequested = true;
         context->userInput = Down;
+      }
+      break;
+    case Up:
+      if (context->currentState == GameState_Moving) {
+        context->shiftRequested = true;
+        context->userInput = Up;
+      }
+      break;
+    case Good_Mode:
+      if (context->currentState == GameState_Moving) {
+        context->goodMode = !context->goodMode;
       }
       break;
     case Action:
