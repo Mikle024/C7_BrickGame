@@ -6,13 +6,16 @@ branches:
 
 install:
   - sudo apt-get update
-  - sudo apt-get install -y gcc cppcheck valgrind make lcov check
+  - sudo apt-get install -y wget ca-certificates
   - wget -qO- https://apt.llvm.org/llvm.sh | sudo bash -s 18
+  - sudo apt-get update
+  - sudo apt-get install -y gcc cppcheck valgrind make lcov check clang-format-18
   - sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-18 100
 
 build: off
 
 build_script:
+  - clang-format --version
   - make -C src/ style_check
   - make -C src/brick_game test
   - make -C src/brick_game valgrind_test
