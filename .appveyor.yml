@@ -6,7 +6,9 @@ branches:
 
 install:
   - sudo apt-get update
-  - sudo apt-get install -y gcc clang-format cppcheck valgrind make lcov check
+  - sudo apt-get install -y gcc cppcheck valgrind make lcov check
+  - wget -qO- https://apt.llvm.org/llvm.sh | sudo bash -s 18
+  - sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-18 100
 
 build: off
 
@@ -15,4 +17,3 @@ build_script:
   - make -C src/brick_game test
   - make -C src/brick_game valgrind_test
   - make -C src/brick_game cpp_check
-  - make -C src/brick_game gcov_report
