@@ -1,120 +1,84 @@
-# Указываем минимальную требуемую версию CMake и объявляем проект
 cmake_minimum_required(VERSION 3.16)
 project(C7_BrickGame C)
 
-# ====================================================================
-# ЧАСТЬ 1: ОПИСАНИЕ ПРОЕКТА ДЛЯ ИНДЕКСАЦИИ IDE (например, CLion)
-# Этот блок не для реальной сборки, а чтобы IDE "понимала" ваш код.
-# ====================================================================
-
-# Устанавливаем стандарт C11 и флаги компилятора, как в Makefile
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 add_compile_options(-Wall -Wextra -Werror)
 
-# --- Описание бэкенд-библиотеки s21_tetris ---
-# Находим все исходные файлы для бэкенда
 file(GLOB BACKEND_SOURCES "src/brick_game/tetris/*.c")
-# "Объявляем" библиотеку для IDE
 add_library(s21_tetris STATIC ${BACKEND_SOURCES})
-# Указываем IDE, где искать заголовочные файлы (.h) для бэкенда
 target_include_directories(s21_tetris PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/brick_game/tetris/inc
 )
 
-# --- Описание тестов (используя библиотеку Check) ---
 enable_testing()
-# Используем pkg-config для надежного поиска библиотеки Check
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(CHECK REQUIRED check)
 
-# Находим все файлы с тестами
 file(GLOB TEST_SOURCES "src/brick_game/tests/*.c")
 
-# "Объявляем" исполняемый файл с тестами для IDE
 add_executable(run_game_tests src/brick_game/tests/tests_main.c ${TEST_SOURCES})
 
-# "Связываем" тесты с бэкенд-библиотекой и библиотекой Check для IDE
 target_include_directories(run_game_tests PRIVATE ${CHECK_INCLUDE_DIRS})
 target_link_libraries(run_game_tests PRIVATE s21_tetris ${CHECK_LIBRARIES})
 
-# --- Описание основного исполняемого файла игры ---
-# Находим библиотеку ncurses, необходимую для фронтенда
 find_package(Curses REQUIRED)
 
-# "Объявляем" исполняемый файл игры для IDE
 add_executable(s21_BrickGame
     src/s21_main.c
     src/gui/cli/s21_frontend.c
 )
-# Указываем IDE, где искать заголовочные файлы для фронтенда и самого s21_main
 target_include_directories(s21_BrickGame PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/cli/inc
 )
-# "Связываем" игру с бэкенд-библиотекой и ncurses для IDE
 target_link_libraries(s21_BrickGame PRIVATE s21_tetris ${CURSES_LIBRARIES})
 
 
-# ====================================================================
-# ЧАСТЬ 2: РЕАЛЬНЫЕ КОМАНДЫ ДЛЯ ЗАПУСКА ИЗ MAKEFILE
-# Эти цели вы будете выбирать в CLion для сборки, тестирования и т.д.
-# Они делегируют всю работу вашему Makefile, который лежит в src/.
-# ====================================================================
-
-# Опция -C src указывает утилите make, что нужно сначала перейти в директорию src
 set(MAKE_COMMAND make -C src)
 
-# Цель для основной сборки и установки (make all)
 add_custom_target(make_all
         COMMAND ${MAKE_COMMAND} all
         COMMENT "Building and installing the game using Makefile (make all)"
         VERBATIM
 )
 
-# Цель для установки (make install)
 add_custom_target(make_install
         COMMAND ${MAKE_COMMAND} install
         COMMENT "Installing the game using Makefile (make install)"
         VERBATIM
 )
 
-# Цель для запуска тестов (make test)
 add_custom_target(make_test
         COMMAND ${MAKE_COMMAND} test
         COMMENT "Running tests using Makefile (make test)"
         VERBATIM
 )
 
-# Цель для создания дистрибутива (make dist)
 add_custom_target(make_dist
         COMMAND ${MAKE_COMMAND} dist
         COMMENT "Creating distribution package using Makefile (make dist)"
         VERBATIM
 )
 
-# Цель для генерации отчета о покрытии (make gcov_report)
 add_custom_target(make_gcov_report
         COMMAND ${MAKE_COMMAND} gcov_report
         COMMENT "Generating GCOV report using Makefile (make gcov_report)"
         VERBATIM
 )
 
-# Цель для форматирования кода (make format_style)
 add_custom_target(make_format_style
         COMMAND ${MAKE_COMMAND} format_style
         COMMENT "Formatting code using Makefile (make format_style)"
         VERBATIM
 )
 
-# Цель для проверки стиля кода (make style_check)
 add_custom_target(make_style_check
         COMMAND ${MAKE_COMMAND} style_check
         COMMENT "Checking code style using Makefile (make style_check)"
         VERBATIM
 )
 
-# Цель для очистки (make clean)
 add_custom_target(make_clean
         COMMAND ${MAKE_COMMAND} clean
         COMMENT "Cleaning build artifacts using Makefile (make clean)"

@@ -19,10 +19,31 @@ WinCurses *createFrontend() {
   if (winGame == NULL) {
     return NULL;
   }
-  winGame->winBoard = newwin(BOARD_HEIGHT, BOARD_WIDTH, Y_START, X_START);
-  winGame->winBrick = newwin(NEXT_HEIGHT, NEXT_WIDTH, NEXT_Y, NEXT_X);
-  winGame->winScore = newwin(SCORE_HEIGHT, SCORE_WIDTH, SCORE_Y, SCORE_X);
-  winGame->winInput = newwin(INPUT_HEIGHT, INPUT_WIDTH, INPUT_Y, INPUT_X);
+
+  int term_rows = 0, term_cols = 0;
+  getmaxyx(stdscr, term_rows, term_cols);
+
+  const int total_width = BOARD_WIDTH + NEXT_WIDTH;
+  const int total_height = INPUT_HEIGHT + BOARD_HEIGHT;
+
+  int start_y = (term_rows - total_height) / 2;
+  int start_x = (term_cols - total_width) / 2;
+
+  if (start_y < 0) start_y = 0;
+  if (start_x < 0) start_x = 0;
+
+  int board_y = start_y;
+  int board_x = start_x;
+  int side_panel_x = board_x + BOARD_WIDTH;
+  int next_y = board_y;
+  int score_y = next_y + NEXT_HEIGHT;
+  int input_y = board_y + BOARD_HEIGHT;
+  int input_x = board_x;
+
+  winGame->winBoard = newwin(BOARD_HEIGHT, BOARD_WIDTH, board_y, board_x);
+  winGame->winBrick = newwin(NEXT_HEIGHT, NEXT_WIDTH, next_y, side_panel_x);
+  winGame->winScore = newwin(SCORE_HEIGHT, SCORE_WIDTH, score_y, side_panel_x);
+  winGame->winInput = newwin(INPUT_HEIGHT, INPUT_WIDTH, input_y, input_x);
 
   refresh();
 
