@@ -4,6 +4,6 @@
 #include <stdbool.h>
 
 int initHighScore();
-bool updateScore(const int score);
+bool updateScore(int score);
 
 #endif

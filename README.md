@@ -1,6 +1,6 @@
 # 🕹️ Brick Game
 
-![Версия](https://img.shields.io/badge/Версия-1.2.0(godMode)-violet)
+![Версия](https://img.shields.io/badge/Версия-1.3.0(godMode)-violet)
 [![Build status](https://ci.appveyor.com/api/projects/status/xt3gfatu93prib80?svg=true)](https://ci.appveyor.com/project/Mikle024/c7-brickgame)
 
 Этот проект был выполнен в рамках основного обучения в **School 21** от сбера. <img src="materials/images/heart_21_x10.gif" alt="drawing" width="20" height="20"/>

@@ -47,20 +47,20 @@ rebuild: clean all
 
 style_check:
 	@echo "┏=========================================┓"
-	@echo "┃  Checking your code for Google Style    ┃"
+	@echo "┃     Checking code for Google Style      ┃"
 	@echo "┗=========================================┛"
 	@$(MAKE) -C brick_game style_check
 	cp ../materials/linters/.clang-format .clang-format
 	clang-format -n *.c *.h $(FRONT) gui/cli/inc/*.h
 	@rm -f .clang-format > /dev/null 2>&1
 
-clang_format:
+format_style:
 	@echo "┏=========================================┓"
-	@echo "┃  Formatting your code for Google Style  ┃"
+	@echo "┃     Formatting code for Google Style    ┃"
 	@echo "┗=========================================┛"
-	@$(MAKE) -C brick_game clang_format
-	cp ../materials/linters/.clang-format .clang-format
-	clang-format -i *.c *.h $(FRONT) gui/cli/inc/*.h
+	@$(MAKE) -C brick_game format_style
+	@cp ../materials/linters/.clang-format .clang-format
+	@clang-format -i *.c *.h $(FRONT) gui/cli/inc/*.h
 	@rm -f .clang-format > /dev/null 2>&1
 
 clean:

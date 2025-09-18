@@ -1,57 +1,49 @@
 #include "inc/s21_fsm.h"
 
 void transitionToState() {
-  GameContext_t const *context = getCurrentContext();
-  if (context) {
-    switch (context->currentState) {
-      case GameState_Start:
-        stateOfStart();
-        break;
-      case GameState_Spawn:
-        stateOfSpawn();
-        break;
-      case GameState_Moving:
-        stateOfMoving();
-        break;
-      case GameState_Shifting:
-        stateOfShifting();
-        break;
-      case GameState_Attaching:
-        stateOfAttaching();
-        break;
-      case GameState_GameOver:
-        stateOfGameOver();
-        break;
-    }
+  switch (getCurrentContext()->currentState) {
+    case GameState_Start:
+      stateOfStart();
+      break;
+    case GameState_Spawn:
+      stateOfSpawn();
+      break;
+    case GameState_Moving:
+      stateOfMoving();
+      break;
+    case GameState_Shifting:
+      stateOfShifting();
+      break;
+    case GameState_Attaching:
+      stateOfAttaching();
+      break;
+    case GameState_GameOver:
+      stateOfGameOver();
+      break;
   }
 }
 
 void stateOfStart() {
-  GameContext_t *context = getCurrentContext();
-
-  if (context && timer()) {
-    if (!context->gameStateInfo.pause) context->currentState = GameState_Spawn;
+  if (getCurrentContext() && timer()) {
+    if (!getCurrentContext()->gameStateInfo.pause)
+      getCurrentContext()->currentState = GameState_Spawn;
   }
 }
 
 void stateOfSpawn() {
-  GameContext_t *context = getCurrentContext();
-
-  if (context) {
+  if (getCurrentContext()) {
     dropNewFigure(START_COORD_F_X, START_COORD_F_Y);
     addCurrentFigureToField();
-    context->currentState = GameState_Moving;
+    getCurrentContext()->currentState = GameState_Moving;
   }
 }
 
 void stateOfMoving() {
-  GameContext_t *context = getCurrentContext();
-
-  if (context && !context->gameStateInfo.pause) {
+  if (getCurrentContext() && !getCurrentContext()->gameStateInfo.pause) {
     if (processAttaching() && timer())
-      context->currentState = GameState_Attaching;
-    else if (context->shiftRequested)
-      context->currentState = GameState_Shifting;
+      getCurrentContext()->currentState = GameState_Attaching;
+    else if (getCurrentContext()->shiftRequested)
+      getCurrentContext()->currentState = GameState_Shifting;
     else if (timer()) {
       moveFigureDown();
       clearCurrentFigureFromField();
@@ -61,75 +53,77 @@ void stateOfMoving() {
 }
 
 void stateOfShifting() {
-  GameContext_t *context = getCurrentContext();
-
-  if (context && context->currentFigure && context->gameStateInfo.field) {
+  if (getCurrentContext() && getCurrentContext()->currentFigure &&
+      getCurrentContext()->gameStateInfo.field) {
     processShift();
     clearCurrentFigureFromField();
     addCurrentFigureToField();
-    context->currentState = GameState_Moving;
+    getCurrentContext()->currentState = GameState_Moving;
   }
 }
 
 void stateOfAttaching() {
-  GameContext_t *context = getCurrentContext();
-
-  if (context) {
+  if (getCurrentContext()) {
     attachFigureToField();
-    int lines = clearLines();
+    const int lines = clearLines();
     countScore(lines);
     if (processGameOver())
-      context->currentState = GameState_GameOver;
+      getCurrentContext()->currentState = GameState_GameOver;
     else
-      context->currentState = GameState_Spawn;
+      getCurrentContext()->currentState = GameState_Spawn;
   }
 }
 
 void stateOfGameOver() {
-  GameContext_t const *context = getCurrentContext();
-
-  if (context) {
+  if (getCurrentContext()) {
     freeGame();
   }
 }
 
 void processShift() {
-  GameContext_t *context = getCurrentContext();
-  if (context && context->currentFigure && context->gameStateInfo.field) {
-    if (context->userInput == Left) {
+  if (getCurrentContext() && getCurrentContext()->currentFigure &&
+      getCurrentContext()->gameStateInfo.field) {
+    if (getCurrentContext()->userInput == Left) {
       moveFigureLeft();
-    } else if (context->userInput == Right) {
+    } else if (getCurrentContext()->userInput == Right) {
       moveFigureRight();
-    } else if (context->userInput == Down) {
+    } else if (getCurrentContext()->userInput == Down) {
       moveFigureDown();
-    } else if (context->userInput == Action) {
+    } else if (getCurrentContext()->userInput == Action) {
       if (!isSquareFigure()) rotationFigure();
-    } else if (context->userInput == Up && context->goodMode) {  // god mode
-      moveFigureUp();                                            // god mode
-    }  // god mode
-    context->shiftRequested = false;
+    } else if (getCurrentContext()->userInput == Up &&
+               getCurrentContext()->goodMode) {
+      moveFigureUp();
+    } else if (getCurrentContext()->userInput == Respawn &&
+               getCurrentContext()->goodMode) {
+      processRespawn();
+    }
+    getCurrentContext()->shiftRequested = false;
   }
 }
 
 bool processAttaching() {
-  GameContext_t *context = getCurrentContext();
   bool willAttach = false;
-  if (context) {
-    int originalY = context->figureY;
+  if (getCurrentContext()) {
+    const int originalY = getCurrentContext()->figureY;
 
-    context->figureY++;
+    getCurrentContext()->figureY++;
     willAttach = collision();
 
-    context->figureY = originalY;
+    getCurrentContext()->figureY = originalY;
   }
   return willAttach;
 }
 
+void processRespawn() {
+  clearCurrentFigureFromField();
+  stateOfSpawn();
+} /**< good mode. */
+
 bool processGameOver() {
-  GameContext_t *context = getCurrentContext();
   bool willGameOver = false;
-  if (context && context->gameStateInfo.field) {
-    int **field = context->gameStateInfo.field;
+  if (getCurrentContext() && getCurrentContext()->gameStateInfo.field) {
+    int **field = getCurrentContext()->gameStateInfo.field;
 
     for (int x = 0; x < FIELD_WIDTH && !willGameOver; x++) {
       if (field[0][x] != 0) willGameOver = true;

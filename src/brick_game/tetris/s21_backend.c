@@ -4,8 +4,8 @@ GameContext_t *getCurrentContext() {
   static GameContext_t gameContext;
   static bool initGame = false;
   if (!initGame) {
-    initRandom();
-    initializeGame(&gameContext, &initGame);
+    initializeGame(&gameContext);
+    initGame = true;
   }
   return &gameContext;
 }
@@ -23,9 +23,10 @@ long long getCurrentTime() {
 }
 
 bool timer() {
-  GameContext_t *gameContext = getCurrentContext();
   bool result = false;
-  long long current_time = getCurrentTime();
+  const long long current_time = getCurrentTime();
+
+  GameContext_t *gameContext = getCurrentContext();
 
   if (current_time - gameContext->lastTime >=
       gameContext->gameStateInfo.speed) {
@@ -35,7 +36,7 @@ bool timer() {
   return result;
 }
 
-void initializeGame(GameContext_t *context, bool *checkInit) {
+void initializeGame(GameContext_t *context) {
   context->currentState = GameState_Start;
 
   context->gameStateInfo.field = createMatrix(FIELD_HEIGHT, FIELD_WIDTH);
@@ -53,9 +54,7 @@ void initializeGame(GameContext_t *context, bool *checkInit) {
   context->oldFigureY = START_COORD_F_Y;
   context->lastTime = 0;
   context->shiftRequested = false;
-  context->goodMode = false;  // god mode
-
-  *checkInit = true;
+  context->goodMode = false;
 }
 
 void freeGame() {
@@ -100,6 +99,7 @@ int **createFigure(const int figureNum) {
       {{0, 0, 0, 0}, {0, 0, 6, 6}, {0, 6, 6, 0}, {0, 0, 0, 0}},
       // Z
       {{0, 0, 0, 0}, {7, 7, 0, 0}, {0, 7, 7, 0}, {0, 0, 0, 0}}};
+
   int **newFigure = createMatrix(FIGURE_SIZE, FIGURE_SIZE);
 
   for (int i = 0; i < FIGURE_SIZE; i++) {
@@ -127,7 +127,7 @@ void dropNewFigure(const int x, const int y) {
 }
 
 void addCurrentFigureToField() {
-  GameContext_t *context = getCurrentContext();
+  const GameContext_t *context = getCurrentContext();
   if (context && context->currentFigure && context->gameStateInfo.field) {
     for (int i = 0; i < FIGURE_SIZE; i++) {
       for (int j = 0; j < FIGURE_SIZE; j++) {
@@ -148,8 +148,8 @@ void clearCurrentFigureFromField() {
   if (context && context->currentFigure && context->gameStateInfo.field) {
     for (int i = 0; i < FIGURE_SIZE; i++) {
       for (int j = 0; j < FIGURE_SIZE; j++) {
-        int fieldX = context->oldFigureX + j;
-        int fieldY = context->oldFigureY + i;
+        const int fieldX = context->oldFigureX + j;
+        const int fieldY = context->oldFigureY + i;
 
         if (context->currentFigure[i][j] != 0 && fieldY >= 0 &&
             fieldY < FIELD_HEIGHT && fieldX >= 0 && fieldX < FIELD_WIDTH) {
@@ -164,7 +164,7 @@ void clearCurrentFigureFromField() {
 }
 
 void attachFigureToField() {
-  GameContext_t const *context = getCurrentContext();
+  const GameContext_t *context = getCurrentContext();
   if (context && context->currentFigure && context->gameStateInfo.field) {
     addCurrentFigureToField();
 
@@ -173,8 +173,8 @@ void attachFigureToField() {
     for (int i = 0; i < FIGURE_SIZE; i++) {
       for (int j = 0; j < FIGURE_SIZE; j++) {
         if (context->currentFigure[i][j] != 0) {
-          int fx = context->figureX + j;
-          int fy = context->figureY + i;
+          const int fx = context->figureX + j;
+          const int fy = context->figureY + i;
 
           if (fx >= 0 && fx < FIELD_WIDTH && fy >= 0 && fy < FIELD_HEIGHT) {
             field[fy][fx] = 8;
@@ -186,7 +186,7 @@ void attachFigureToField() {
 }
 
 bool isSquareFigure() {
-  GameContext_t const *context = getCurrentContext();
+  const GameContext_t *context = getCurrentContext();
   bool result = false;
   if (context && context->currentFigure) {
     for (int i = 0; i < FIGURE_SIZE; i++) {
@@ -199,7 +199,7 @@ bool isSquareFigure() {
 }
 
 bool collision() {
-  GameContext_t const *context = getCurrentContext();
+  const GameContext_t *context = getCurrentContext();
   bool hasCollision = false;
   if (context && context->currentFigure && context->gameStateInfo.field) {
     int **currentFigure = context->currentFigure;
@@ -207,8 +207,8 @@ bool collision() {
     for (int i = 0; i < FIGURE_SIZE && !hasCollision; i++) {
       for (int j = 0; j < FIGURE_SIZE && !hasCollision; j++) {
         if (currentFigure[i][j] != 0) {
-          int boardX = context->figureX + j;
-          int boardY = context->figureY + i;
+          const int boardX = context->figureX + j;
+          const int boardY = context->figureY + i;
 
           if (boardY >= FIELD_HEIGHT) hasCollision = true;
 
@@ -218,7 +218,7 @@ bool collision() {
 
           if (pixelInField(boardX, boardY) &&
               context->gameStateInfo.field[boardY][boardX] != 0) {
-            int fieldValue = context->gameStateInfo.field[boardY][boardX];
+            const int fieldValue = context->gameStateInfo.field[boardY][boardX];
 
             if (fieldValue != currentFigure[i][j]) {
               hasCollision = true;
@@ -240,7 +240,7 @@ void countScore(const int lines) {
   if (context) {
     static const int scores[] = {0, 100, 300, 700, 1500};
 
-    int scoreIndex = (lines >= 0 && lines <= 4) ? lines : 0;
+    const int scoreIndex = (lines >= 0 && lines <= 4) ? lines : 0;
 
     context->gameStateInfo.score += scores[scoreIndex];
     context->gameStateInfo.level = 1 + (context->gameStateInfo.score / 600);
@@ -265,16 +265,16 @@ void countScore(const int lines) {
 void countSpeed() {
   GameContext_t *context = getCurrentContext();
   if (context) {
-    int level = context->gameStateInfo.level;
+    const int level = context->gameStateInfo.level;
 
     if (level <= 1) {
       context->gameStateInfo.speed = START_DELAY;
     } else if (level >= MAX_LEVEL) {
       context->gameStateInfo.speed = MIN_DELAY;
     } else {
-      int levelRange = MAX_LEVEL - 1;
-      int delayRange = START_DELAY - MIN_DELAY;
-      int levelStep = (level - 1);
+      const int levelRange = MAX_LEVEL - 1;
+      const int delayRange = START_DELAY - MIN_DELAY;
+      const int levelStep = (level - 1);
 
       context->gameStateInfo.speed =
           START_DELAY - (levelStep * delayRange / levelRange);
@@ -294,7 +294,7 @@ int clearLines() {
 }
 
 bool fullLine(const int numLine) {
-  GameContext_t const *context = getCurrentContext();
+  const GameContext_t *context = getCurrentContext();
   bool isFullLine = true;
   if (context) {
     for (int i = 0; i < FIELD_WIDTH && isFullLine; i++) {
@@ -305,7 +305,7 @@ bool fullLine(const int numLine) {
 }
 
 void removeLine(const int numLine) {
-  GameContext_t *context = getCurrentContext();
+  const GameContext_t *context = getCurrentContext();
   if (context) {
     for (int i = numLine; i > 0; i--) {
       for (int j = 0; j < FIELD_WIDTH; j++) {

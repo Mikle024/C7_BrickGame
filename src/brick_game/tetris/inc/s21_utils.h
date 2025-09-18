@@ -11,7 +11,7 @@
  * @param column Number of columns in the matrix.
  * @return int** Pointer to the created matrix or NULL in case of error.
  */
-int **createMatrix(const int rows, const int column);
+int **createMatrix(int rows, int column);
 
 /**
  * @brief Frees memory allocated for a two-dimensional matrix.
@@ -19,6 +19,6 @@ int **createMatrix(const int rows, const int column);
  * @param matrix Pointer to the matrix to be freed.
  * @param rows Number of rows in the matrix.
  */
-void freeMatrix(int **matrix, const int rows);
+void freeMatrix(int **matrix, int rows);
 
 #endif

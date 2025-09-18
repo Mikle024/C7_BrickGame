@@ -48,7 +48,7 @@ void renderGameState(GameInfo_t *gameInfo, WinCurses *winGame) {
 }
 
 int handleUserInput(const int ch, const int lastKey, WinCurses *winGame) {
-  bool hold = (ch == lastKey);
+  const bool hold = (ch == lastKey);
 
   switch (ch) {
     case ' ':
@@ -65,12 +65,15 @@ int handleUserInput(const int ch, const int lastKey, WinCurses *winGame) {
     case KEY_DOWN:
       userInput(Down, hold);
       break;
-    case KEY_UP:                   // god mode
-      userInput(Up, hold);         // god mode
-      break;                       // god mode
-    case 'g':                      // god mode
-      userInput(Good_Mode, hold);  // god mode
-      break;                       // god mode
+    case KEY_UP:
+      userInput(Up, hold);
+      break;
+    case '+':
+      userInput(Good_Mode, hold);
+      break;
+    case 's':
+      userInput(Respawn, hold);
+      break;
     case 'p':
       if (winGame->currentScreen != SCREEN_START) {
         userInput(Pause, hold);
