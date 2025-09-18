@@ -54,7 +54,7 @@ leaks_test: test_build
 	-rm -rf *.gcda *.gcno *.info $(OUT_TEST) $(OBJ_TEST) $(OBJ) $(LIBRARY) $(FILE_SCORE)
 
 valgrind_test: test_build
-	valgrind valgrind --tool=memcheck --leak-check=full --track-origins=yes ./$(OUT_TEST)
+	valgrind --tool=memcheck --leak-check=full --track-origins=yes ./$(OUT_TEST)
 	-rm -rf *.gcda *.gcno *.info $(OUT_TEST) $(OBJ_TEST) $(OBJ) $(LIBRARY) $(FILE_SCORE)
 
 cpp_check:
@@ -108,7 +108,7 @@ style_check:
 	clang-format -n $(SRC_FILES) $(INC) $(SRC_TEST) $(MAIN_TEST) $(INC_TEST)
 	@rm -f .clang-format > /dev/null 2>&1
 
-clang_format:
+format_style:
 	cp ../../materials/linters/.clang-format .clang-format
 	clang-format -i $(SRC_FILES) $(INC) $(SRC_TEST) $(MAIN_TEST) $(INC_TEST)
 	@rm -f .clang-format > /dev/null 2>&1

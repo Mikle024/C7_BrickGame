@@ -2,11 +2,8 @@
 
 START_TEST(test_initializeGame_basic) {
   GameContext_t context;
-  bool checkInit = false;
 
-  initializeGame(&context, &checkInit);
-
-  ck_assert_int_eq(checkInit, true);
+  initializeGame(&context);
 
   ck_assert_ptr_nonnull(context.gameStateInfo.field);
   ck_assert_ptr_nonnull(context.gameStateInfo.next);
@@ -38,9 +35,8 @@ END_TEST
 
 START_TEST(test_initializeGame_field_dimensions) {
   GameContext_t context;
-  bool checkInit = false;
 
-  initializeGame(&context, &checkInit);
+  initializeGame(&context);
 
   for (int i = 0; i < FIELD_HEIGHT; i++) {
     ck_assert_ptr_nonnull(context.gameStateInfo.field[i]);

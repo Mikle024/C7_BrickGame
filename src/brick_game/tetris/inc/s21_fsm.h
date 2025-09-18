@@ -1,7 +1,6 @@
 #ifndef S21_FSM_H
 #define S21_FSM_H
 
-#include "s21_backend.h"
 #include "s21_tetris.h"
 
 void transitionToState();
@@ -15,6 +14,7 @@ void stateOfGameOver();
 
 void processShift();
 bool processAttaching();
+void processRespawn(); /**< good mode. */
 bool processGameOver();
 
 #endif

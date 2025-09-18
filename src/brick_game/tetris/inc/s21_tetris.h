@@ -4,7 +4,6 @@
 #include <stdbool.h>
 
 #include "s21_backend.h"
-#include "s21_defines.h"
 #include "s21_types.h"
 
 /**
