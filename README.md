@@ -1,16 +1,19 @@
 # 🕹️ Brick Game
 
 ![Версия](https://img.shields.io/badge/Версия-1.3.0(godMode)-violet)
-[![Build status](https://ci.appveyor.com/api/projects/status/xt3gfatu93prib80?svg=true)](https://ci.appveyor.com/project/Mikle024/c7-brickgame)
+[![CI](https://github.com/Mikle024/C7_BrickGame/actions/workflows/ci.yml/badge.svg)](https://github.com/Mikle024/C7_BrickGame/actions/workflows/ci.yml)
 
-Этот проект был выполнен в рамках основного обучения в **School 21** от сбера. <img src="materials/images/heart_21_x10.gif" alt="drawing" width="20" height="20"/>
+*The project was written from task S21.* <img src="materials/images/heart_21_x10.gif" alt="drawing" width="20" height="20"/>
+
+![C7_BrickGame.png](materials/images/C7_BrickGame.png)
 
 **Это реализация классической игры "Тетрис" с использованием языка программирования C и библиотеки ncurses для создания интерфейса с использованием псевдографики. Проект демонстрирует навыки работы с конечными автоматами, обработкой пользовательского ввода и созданием игровой логики.**
 
 ![tetris.gif](materials%2Fimages%2Ftetris.gif)
+
 ## 🏗️ Архитектура FSM
 
-![fsm_tetris.png](src%2Ffsm_tetris.png)
+<img src="materials/images/fsm_tetris.png" alt="fsm_tetris.png" width="60%"/>
 
 *Подробнее в документации (генерация с помощью цели `make dvi`)*
 
@@ -84,7 +87,7 @@ cd ../build
 
 3. Механика уровней
 
-*Каждый раз, когда игрок набирает 600 очков, уровень увеличивается на 1. Повышение уровня увеличивает скорость движения фигур.* 
+*Каждый раз, когда игрок набирает 600 очков, уровень увеличивается на 1. Повышение уровня увеличивает скорость движения фигур.*
 
 *Максимальное количество уровней — 10.*
 
@@ -117,5 +120,4 @@ make test
 Для удаления всех сгенерированных файлов используйте:
 ```bash
 make clean
-
 ``` 
