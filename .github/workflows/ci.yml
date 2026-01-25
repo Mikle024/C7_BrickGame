@@ -4,7 +4,7 @@ on:
   push:
     branches: ["godMode", "main", "develop"]
   pull_request:
-    branches: ["develop", "main", "master"]
+    branches: ["godMode", "main", "develop"]
 
 jobs:
   build-and-test:
