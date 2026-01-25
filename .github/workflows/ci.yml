@@ -1,0 +1,32 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: ["godMode", "main", "develop"]
+  pull_request:
+    branches: ["develop", "main", "master"]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget ca-certificates
+          wget -qO- https://apt.llvm.org/llvm.sh | sudo bash -s 18
+          sudo apt-get update
+          sudo apt-get install -y gcc cppcheck valgrind make lcov check clang-format-18
+          sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-18 100
+
+      - name: Run build and tests
+        run: |
+          clang-format --version
+          make -C src/ style_check
+          make -C src/brick_game test
+          make -C src/brick_game valgrind_test
+          make -C src/brick_game cpp_check
